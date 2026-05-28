@@ -1,22 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchProduct, reserveProduct } from "@/lib/api";
+import { fetchProduct } from "@/lib/api";
 import { pesoFormatter } from "@/lib/format";
 import type { Product } from "@/lib/types";
 import { useCart } from "@/contexts/CartContext";
 
-const TIMER_DURATION = 600;
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&q=85";
-
-function formatTime(s: number) {
-  const m = Math.floor(s / 60).toString().padStart(2, "0");
-  const sec = (s % 60).toString().padStart(2, "0");
-  return `${m}:${sec}`;
-}
+const fallbackImage = "https://images.unsplash.com/photo-1544441893-675973e31985?w=900&q=85";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -24,311 +18,221 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export default function ProductPage({ productId }: { productId: string }) {
   const router = useRouter();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
-  const [activeImg, setActiveImg] = useState(0);
-  const [timerSecs, setTimerSecs] = useState(TIMER_DURATION);
-  const [openAccordion, setOpenAccordion] = useState<string | null>("fit");
+  const [activeImage, setActiveImage] = useState(0);
+  const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { addToCart, setIsCartOpen, cart } = useCart();
-  const inCart = cart.some((item) => item.id === product?.id);
-
   useEffect(() => {
-    async function loadProduct() {
-      try {
-        setError(null);
-        setLoading(true);
-        const data = await fetchProduct(Number.parseInt(productId, 10));
+    fetchProduct(Number.parseInt(productId, 10))
+      .then((data) => {
         setProduct(data);
-        setActiveImg(0);
-        if (data.status === "reserved" && data.is_locked) {
-          setTimerSecs(data.lock_ttl || TIMER_DURATION);
-        }
-      } catch (err: unknown) {
-        console.error("Fetch error:", err);
-        setError(getErrorMessage(err, "Something went wrong."));
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadProduct();
+        setActiveImage(0);
+        setQuantity(1);
+      })
+      .catch((err: unknown) => setError(getErrorMessage(err, "Product unavailable.")))
+      .finally(() => setLoading(false));
   }, [productId]);
 
-  useEffect(() => {
-    if (!inCart || timerSecs <= 0 || !product) return;
-
-    const id = window.setInterval(() => {
-      setTimerSecs((seconds) => {
-        if (seconds <= 1) {
-          window.clearInterval(id);
-          fetchProduct(product.id).then(setProduct).catch(console.error);
-          return TIMER_DURATION;
-        }
-
-        return seconds - 1;
-      });
-    }, 1000);
-
-    return () => window.clearInterval(id);
-  }, [inCart, timerSecs, product]);
-
-  const handleAddToCart = async () => {
-    if (!product || product.status !== "available") return;
-
-    try {
-      await reserveProduct(product.id);
-      const updated = await fetchProduct(product.id);
-      setProduct(updated);
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.images[0] || FALLBACK_IMAGE,
-      });
-      setIsCartOpen(true);
-    } catch (err: unknown) {
-      alert(getErrorMessage(err, "Could not reserve this item."));
-    }
-  };
-
-  const handleBuyNow = async () => {
-    if (!product || product.status !== "available") {
-      if (inCart) {
-        setIsCartOpen(true);
-      }
-      return;
-    }
-
-    await handleAddToCart();
-    setIsCartOpen(true);
-  };
+  const images = useMemo(() => {
+    if (!product) return [fallbackImage];
+    return product.images?.length ? product.images : [product.image_url || fallbackImage];
+  }, [product]);
 
   if (loading) {
     return (
-      <main
-        id="main-content"
-        className="min-h-screen flex items-center justify-center font-playfair uppercase tracking-widest animate-pulse"
-      >
-        Archive Boutique...
+      <main id="main-content" className="min-h-screen bg-archive-ivory px-4 pt-32">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 lg:grid-cols-2">
+          <div className="aspect-[4/5] animate-pulse rounded-sm bg-slate-200" />
+          <div className="space-y-5">
+            <div className="h-5 w-40 animate-pulse rounded bg-slate-200" />
+            <div className="h-14 w-3/4 animate-pulse rounded bg-slate-200" />
+            <div className="h-32 animate-pulse rounded bg-slate-200" />
+          </div>
+        </div>
       </main>
     );
   }
 
-  if (error) {
+  if (error || !product) {
     return (
       <main
         id="main-content"
-        className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-[#F5F4F0]"
+        className="flex min-h-screen flex-col items-center justify-center bg-archive-ivory px-4 text-center"
       >
-        <h2 className="font-playfair text-2xl mb-4 italic">Pardon our delay</h2>
-        <p className="font-dm-sans text-gray-500 mb-8 max-w-sm">{error}</p>
+        <h1 className="font-playfair text-4xl font-semibold tracking-normal text-archive-green-dark">Product not found</h1>
+        <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">{error || "This item is unavailable."}</p>
         <button
-          onClick={() => window.location.reload()}
-          className="border border-black px-8 py-3 font-dm-sans text-[11px] tracking-widest uppercase hover:bg-black hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black"
+          type="button"
+          onClick={() => router.push("/products")}
+          className="mt-8 inline-flex h-12 items-center gap-2 rounded-sm bg-archive-green-dark px-5 text-sm font-black uppercase tracking-[0.14em] text-white hover:bg-archive-gold hover:text-archive-green-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-archive-green-dark"
         >
-          Retry Entry
+          <ArrowLeft size={17} />
+          Back to shop
         </button>
       </main>
     );
   }
 
-  if (!product) {
-    return (
-      <main id="main-content" className="min-h-screen flex items-center justify-center">
-        Product not found.
-      </main>
-    );
-  }
-
-  const productImages = product.images.length > 0 ? product.images : [FALLBACK_IMAGE];
-  const accordionData = [
-    { key: "fit", title: "The Fit", content: product.fit_details },
-    { key: "fabric", title: "The Fabric", content: product.fabric_details },
-    { key: "condition", title: "The Condition", content: product.condition_details },
-  ];
+  const isAvailable = product.status === "available" && product.stock_quantity > 0;
 
   return (
-    <main id="main-content" className="bg-[#F5F4F0] min-h-screen pt-24 pb-20">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="mb-12 flex flex-col gap-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 group w-fit focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black"
-          >
-            <span className="text-[10px] uppercase tracking-widest font-bold border-b border-black/0 group-hover:border-black transition-colors">
-              Back to Collection
-            </span>
-          </button>
+    <main id="main-content" className="min-h-screen bg-archive-ivory px-4 pb-20 pt-28 sm:px-6">
+      <div className="mx-auto max-w-7xl">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="mb-8 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-archive-green hover:text-archive-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-archive-green-dark"
+        >
+          <ArrowLeft size={16} />
+          Back
+        </button>
 
-          <div className="flex gap-3 items-center min-w-0 overflow-hidden">
-            {["Collection", product.brand, product.name].map((crumb, i, arr) => (
-              <span key={`${crumb}-${i}`} className="flex items-center gap-3 min-w-0">
-                <span
-                  className={`text-[9px] uppercase tracking-[0.2em] font-semibold truncate ${
-                    i === arr.length - 1 ? "text-black" : "text-gray-400"
-                  }`}
-                >
-                  {crumb}
-                </span>
-                {i < arr.length - 1 && <span className="text-gray-300">/</span>}
-              </span>
-            ))}
-          </div>
-        </div>
+        <section className="mb-8 rounded-sm bg-archive-green-dark px-6 py-8 text-white luxury-shadow">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-archive-gold">Shop the archive</p>
+          <h1 className="mt-3 font-playfair text-4xl font-semibold tracking-normal">Products</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200">
+            Browse curated pre-loved clothing, bags, and accessories.
+          </p>
+        </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-          <div className="lg:col-span-7 space-y-4">
-            <div className="aspect-[3/4] overflow-hidden bg-gray-100 relative">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+          <section>
+            <div className="relative aspect-[4/5] overflow-hidden rounded-sm border border-archive-gold/25 bg-white luxury-shadow">
               <Image
-                src={productImages[activeImg] || FALLBACK_IMAGE}
+                src={images[activeImage] || fallbackImage}
                 alt={product.name}
                 fill
                 priority
-                sizes="(min-width: 1024px) 58vw, 100vw"
-                className="object-cover transition-opacity duration-500"
+                sizes="(min-width: 1024px) 55vw, 100vw"
+                className="object-cover"
               />
             </div>
-            <div className="grid grid-cols-4 gap-4">
-              {productImages.map((img, i) => (
-                <button
-                  key={`${img}-${i}`}
-                  type="button"
-                  onClick={() => setActiveImg(i)}
-                  aria-label={`View ${product.name} image ${i + 1}`}
-                  className={`aspect-square overflow-hidden bg-gray-100 relative transition-opacity duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black ${
-                    activeImg === i ? "opacity-100 ring-1 ring-black ring-offset-2" : "opacity-50 hover:opacity-100"
-                  }`}
-                >
-                  <Image
-                    src={img}
-                    alt=""
-                    fill
-                    sizes="(min-width: 1024px) 14vw, 25vw"
-                    className="object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="lg:col-span-5">
-            <div className="sticky top-32">
-              <div className="flex justify-between items-center gap-4 mb-8">
-                <span className="text-[10px] tracking-[0.2em] text-gray-400 uppercase font-bold">
-                  {product.archive_id}
-                </span>
-                <span
-                  className={`text-[9px] px-3 py-1 font-bold uppercase tracking-widest ${
-                    product.status === "available"
-                      ? "bg-green-50 text-green-700"
-                      : product.status === "reserved"
-                        ? "bg-amber-50 text-amber-700"
-                        : "bg-gray-100 text-gray-500"
-                  }`}
-                >
-                  {product.status === "available"
-                    ? "Available"
-                    : product.status === "reserved"
-                      ? "Reserved"
-                      : "Sold"}
-                </span>
-              </div>
-
-              <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold mb-3">
-                {product.brand}
-              </p>
-              <h1 className="text-5xl font-playfair mb-4 leading-tight text-balance">{product.name}</h1>
-              <p className="text-lg text-gray-500 font-playfair italic mb-10">{product.era}</p>
-
-              <div className="flex items-baseline gap-6 mb-12">
-                <span className="text-4xl font-dm-sans font-medium tabular-nums">
-                  {pesoFormatter.format(product.price)}
-                </span>
-                <span className="text-sm text-gray-300 line-through font-light tabular-nums">
-                  SRP {pesoFormatter.format(product.srp)}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mb-10">
-                <div className="bg-white/50 p-4 border border-black/5">
-                  <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-1">Size</p>
-                  <p className="text-sm font-medium">{product.size}</p>
-                </div>
-                <div className="bg-white/50 p-4 border border-black/5">
-                  <p className="text-[9px] uppercase tracking-widest text-gray-400 font-bold mb-1">Color</p>
-                  <p className="text-sm font-medium">{product.color}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {product.status === "available" && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <button
-                      onClick={handleAddToCart}
-                      className="bg-white border border-black text-black py-5 text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-black hover:text-white transition-colors active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black"
-                    >
-                      Add to Cart
-                    </button>
-                    <button
-                      onClick={handleBuyNow}
-                      className="bg-black text-white py-5 text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-gray-900 transition-colors active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black"
-                    >
-                      Buy Now
-                    </button>
-                  </div>
-                )}
-
-                {product.status === "reserved" && !inCart && (
-                  <div className="w-full py-5 text-center border border-amber-200 bg-amber-50 text-[10px] uppercase tracking-[0.3em] font-bold text-amber-700">
-                    Currently Reserved
-                  </div>
-                )}
-
-                {inCart && (
+            {images.length > 1 && (
+              <div className="mt-4 grid grid-cols-4 gap-3">
+                {images.map((image, index) => (
                   <button
-                    onClick={() => setIsCartOpen(true)}
-                    className="w-full border border-black py-5 text-[10px] uppercase tracking-[0.3em] font-bold flex items-center justify-center gap-4 hover:bg-black hover:text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black"
+                    key={`${image}-${index}`}
+                    type="button"
+                    aria-label={`Show product image ${index + 1}`}
+                    onClick={() => setActiveImage(index)}
+                    className={`relative aspect-square overflow-hidden rounded-sm border bg-slate-100 ${
+                      activeImage === index ? "border-slate-950" : "border-slate-200"
+                    } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950`}
                   >
-                    <span>Item in Cart</span>
-                    <span className="font-dm-sans font-normal text-amber-600 tabular-nums">{formatTime(timerSecs)}</span>
+                    <Image src={image} alt="" fill sizes="25vw" className="object-cover" />
                   </button>
-                )}
-
-                <p className="text-[9px] text-gray-400 text-center uppercase tracking-widest pt-4">
-                  1-of-1 Original. No returns.
-                </p>
-              </div>
-
-              <div className="mt-16 border-t border-black/10">
-                {accordionData.map(({ key, title, content }) => (
-                  <div key={key} className="border-b border-black/10">
-                    <button
-                      onClick={() => setOpenAccordion(openAccordion === key ? null : key)}
-                      aria-expanded={openAccordion === key}
-                      className="w-full flex justify-between items-center py-6 group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-black"
-                    >
-                      <span className="text-[10px] uppercase tracking-[0.2em] font-bold group-hover:tracking-[0.3em] transition-[letter-spacing]">
-                        {title}
-                      </span>
-                      <span className={`text-xl font-light transition-transform duration-300 ${openAccordion === key ? "rotate-45" : ""}`}>
-                        +
-                      </span>
-                    </button>
-                    <div
-                      className={`overflow-hidden transition-[max-height,padding-bottom] duration-500 ease-in-out ${
-                        openAccordion === key ? "max-h-64 pb-8" : "max-h-0"
-                      }`}
-                    >
-                      <p className="text-sm leading-relaxed text-gray-500 font-light">{content}</p>
-                    </div>
-                  </div>
                 ))}
               </div>
+            )}
+          </section>
+
+          <section className="lg:sticky lg:top-28 lg:self-start">
+            <div className="mb-5 flex flex-wrap items-center gap-3">
+              <span className="rounded-sm bg-archive-green-dark px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-white">
+                {product.category}
+              </span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                {product.archive_id}
+              </span>
             </div>
-          </div>
+
+            <h1 className="font-playfair text-5xl font-semibold leading-tight tracking-normal text-archive-green-dark">
+              {product.name}
+            </h1>
+            <div className="mt-6 h-px w-40 bg-archive-gold" />
+            <p className="mt-4 text-sm font-bold uppercase tracking-[0.14em] text-slate-500">
+              {product.brand || "Archive Thrift"} {product.era ? `/ ${product.era}` : ""}
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-end gap-4">
+              <p className="text-4xl font-black tabular-nums text-archive-green-dark">
+                {pesoFormatter.format(product.price)}
+              </p>
+              {product.srp && product.srp > product.price && (
+                <p className="pb-1 text-sm font-semibold text-slate-400 line-through">
+                  {pesoFormatter.format(product.srp)}
+                </p>
+              )}
+            </div>
+
+            <p className="mt-7 max-w-2xl text-base leading-8 text-slate-600">{product.description}</p>
+
+            <div className="mt-8 grid grid-cols-2 gap-3">
+              <InfoTile label="Size" value={product.size || "One Size"} />
+              <InfoTile label="Color" value={product.color || "Assorted"} />
+              <InfoTile label="Availability" value={isAvailable ? `${product.stock_quantity} in stock` : "Sold out"} />
+              <InfoTile label="Condition" value={product.condition_details || "Quality checked"} />
+            </div>
+
+            <div className="mt-8 rounded-sm border border-archive-gold/25 bg-white p-4 shadow-sm">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="flex h-12 w-36 items-center justify-between rounded-sm border border-archive-gold/25 bg-archive-ivory px-2">
+                  <button
+                    type="button"
+                    aria-label="Decrease quantity"
+                    onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                    className="flex h-9 w-9 items-center justify-center rounded-sm hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="text-sm font-black tabular-nums">{quantity}</span>
+                  <button
+                    type="button"
+                    aria-label="Increase quantity"
+                    onClick={() => setQuantity((current) => Math.min(product.stock_quantity, current + 1))}
+                    className="flex h-9 w-9 items-center justify-center rounded-sm hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  disabled={!isAvailable}
+                  onClick={() => addToCart(product, quantity)}
+                  className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-sm bg-archive-green-dark px-5 text-sm font-black uppercase tracking-[0.14em] text-white transition-colors hover:bg-archive-gold hover:text-archive-green-dark disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-archive-green-dark"
+                >
+                  <ShoppingBag size={18} />
+                  Add to cart
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-8 space-y-4 border-t border-slate-200 pt-8">
+              <Detail title="Fit" copy={product.fit_details || "Easy thrift-store fit for daily styling."} />
+              <Detail title="Fabric" copy={product.fabric_details || "Pre-loved materials selected for reuse."} />
+              <Detail title="Care" copy="Clean before first wear and follow garment care labels where available." />
+            </div>
+
+            <Link
+              href="/cart"
+              className="mt-8 inline-flex text-sm font-black uppercase tracking-[0.14em] text-archive-green hover:text-archive-gold"
+            >
+              Go to checkout
+            </Link>
+          </section>
         </div>
       </div>
     </main>
+  );
+}
+
+function InfoTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-sm border border-archive-gold/25 bg-white p-4">
+      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-archive-gold">{label}</p>
+      <p className="mt-2 text-sm font-bold text-slate-800">{value}</p>
+    </div>
+  );
+}
+
+function Detail({ title, copy }: { title: string; copy: string }) {
+  return (
+    <div>
+      <h2 className="text-xs font-black uppercase tracking-[0.16em] text-archive-green-dark">{title}</h2>
+      <p className="mt-2 text-sm leading-7 text-slate-600">{copy}</p>
+    </div>
   );
 }

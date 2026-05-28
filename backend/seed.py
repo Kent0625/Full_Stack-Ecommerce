@@ -1,319 +1,292 @@
-import sys, os
-import json
+import os
+import sys
+from datetime import datetime, timedelta
 
-# Fix import path for standalone execution
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import models, database
+import models
 from database import SessionLocal, engine
+from main import hash_password
+
+
+PRODUCTS = [
+    {
+        "archive_id": "ARC-CLO-001",
+        "name": "Vintage Denim Jacket",
+        "description": "A washed blue denim jacket with soft fading, metal buttons, and a relaxed thrifted shape.",
+        "price": 1450.0,
+        "category": "Clothing",
+        "image_url": "https://images.unsplash.com/photo-1544441893-675973e31985?w=900&q=85",
+        "stock_quantity": 7,
+        "status": "available",
+        "brand": "Levi's Vintage",
+        "era": "Circa 1980s",
+        "srp": 3200.0,
+        "size": "L",
+        "color": "Indigo",
+        "fit_details": "Relaxed trucker fit. Best for layering over shirts and hoodies.",
+        "fabric_details": "Heavy cotton denim with naturally softened hand feel.",
+        "condition_details": "Great vintage fading with light signs of wear.",
+    },
+    {
+        "archive_id": "ARC-CLO-002",
+        "name": "Oversized Graphic Shirt",
+        "description": "A soft cotton graphic tee with a boxy oversized cut and faded concert-style print.",
+        "price": 520.0,
+        "category": "Clothing",
+        "image_url": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=900&q=85",
+        "stock_quantity": 12,
+        "status": "available",
+        "brand": "Archive Streetwear",
+        "era": "Circa 1990s",
+        "srp": 980.0,
+        "size": "XL",
+        "color": "Faded Black",
+        "fit_details": "Oversized boxy fit with dropped shoulders.",
+        "fabric_details": "Breathable pre-loved cotton jersey.",
+        "condition_details": "Cracked print and soft fading, no holes.",
+    },
+    {
+        "archive_id": "ARC-CLO-003",
+        "name": "Corduroy Pants",
+        "description": "Straight-leg corduroy trousers in warm brown with a structured waist and everyday drape.",
+        "price": 890.0,
+        "category": "Clothing",
+        "image_url": "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=900&q=85",
+        "stock_quantity": 6,
+        "status": "available",
+        "brand": "Weekend Archive",
+        "era": "Circa 2000s",
+        "srp": 1900.0,
+        "size": "32W",
+        "color": "Chestnut",
+        "fit_details": "Straight leg with a mid-rise waist.",
+        "fabric_details": "Midweight cotton corduroy.",
+        "condition_details": "Excellent condition with clean hems.",
+    },
+    {
+        "archive_id": "ARC-BAG-001",
+        "name": "Leather Shoulder Bag",
+        "description": "Compact black leather shoulder bag with a curved flap, brass hardware, and clean interior.",
+        "price": 1750.0,
+        "category": "Bags",
+        "image_url": "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=900&q=85",
+        "stock_quantity": 4,
+        "status": "available",
+        "brand": "Metro Archive",
+        "era": "Circa 2010s",
+        "srp": 4200.0,
+        "size": "Medium",
+        "color": "Black",
+        "fit_details": "Sits comfortably on the shoulder with daily-carry capacity.",
+        "fabric_details": "Genuine leather with cotton lining.",
+        "condition_details": "Light creasing on the flap, clean corners.",
+    },
+    {
+        "archive_id": "ARC-BAG-002",
+        "name": "Canvas Tote Bag",
+        "description": "Durable canvas tote with reinforced handles and enough room for books, laptop, and market finds.",
+        "price": 650.0,
+        "category": "Bags",
+        "image_url": "https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?w=900&q=85",
+        "stock_quantity": 10,
+        "status": "available",
+        "brand": "Daily Reuse",
+        "era": "Modern thrift",
+        "srp": 1200.0,
+        "size": "Large",
+        "color": "Natural",
+        "fit_details": "Large open-top daily tote.",
+        "fabric_details": "Heavy recycled cotton canvas.",
+        "condition_details": "Freshly cleaned with minimal wear.",
+    },
+    {
+        "archive_id": "ARC-BAG-003",
+        "name": "Mini Backpack",
+        "description": "Small nylon backpack with front zip pocket, adjustable straps, and city-friendly proportions.",
+        "price": 980.0,
+        "category": "Bags",
+        "image_url": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=900&q=85",
+        "stock_quantity": 5,
+        "status": "available",
+        "brand": "Nomad Finds",
+        "era": "Circa 2000s",
+        "srp": 2100.0,
+        "size": "Mini",
+        "color": "Olive",
+        "fit_details": "Compact backpack for essentials.",
+        "fabric_details": "Water-resistant nylon shell.",
+        "condition_details": "Clean straps and smooth zippers.",
+    },
+    {
+        "archive_id": "ARC-ACC-001",
+        "name": "Retro Sunglasses",
+        "description": "Tinted rectangular sunglasses with lightweight frames and a clean retro profile.",
+        "price": 430.0,
+        "category": "Accessories",
+        "image_url": "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=900&q=85",
+        "stock_quantity": 15,
+        "status": "available",
+        "brand": "Sun Archive",
+        "era": "Y2K inspired",
+        "srp": 900.0,
+        "size": "One Size",
+        "color": "Tortoise",
+        "fit_details": "Medium-width rectangular frame.",
+        "fabric_details": "Acetate-style frame with tinted lenses.",
+        "condition_details": "No major scratches, includes pouch.",
+    },
+    {
+        "archive_id": "ARC-ACC-002",
+        "name": "Beaded Bracelet",
+        "description": "Hand-strung beaded bracelet with warm neutral stones and elastic fit.",
+        "price": 260.0,
+        "category": "Accessories",
+        "image_url": "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=900&q=85",
+        "stock_quantity": 20,
+        "status": "available",
+        "brand": "Handmade Rack",
+        "era": "Artisan thrift",
+        "srp": 520.0,
+        "size": "One Size",
+        "color": "Earth Mix",
+        "fit_details": "Stretch fit for most wrists.",
+        "fabric_details": "Mixed beads on elastic cord.",
+        "condition_details": "Newly restrung and inspected.",
+    },
+    {
+        "archive_id": "ARC-ACC-003",
+        "name": "Classic Watch",
+        "description": "Minimal gold-tone analog watch with a black strap and polished vintage face.",
+        "price": 1250.0,
+        "category": "Accessories",
+        "image_url": "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=900&q=85",
+        "stock_quantity": 3,
+        "status": "available",
+        "brand": "Classic Time",
+        "era": "Circa 1990s",
+        "srp": 2800.0,
+        "size": "One Size",
+        "color": "Gold / Black",
+        "fit_details": "Adjustable strap for everyday wear.",
+        "fabric_details": "Stainless case with faux leather strap.",
+        "condition_details": "Battery replaced and time tested.",
+    },
+]
+
+
+DEMO_USERS = [
+    {"name": "Demo Buyer", "email": "demo@example.com", "password": "DemoPass123"},
+    {"name": "Ana Santos", "email": "ana@example.com", "password": "DemoPass123"},
+    {"name": "Luis Cruz", "email": "luis@example.com", "password": "DemoPass123"},
+]
+
+
+def upsert_products(db):
+    products_by_archive_id = {}
+    for product_data in PRODUCTS:
+        existing = (
+            db.query(models.Product)
+            .filter(models.Product.archive_id == product_data["archive_id"])
+            .first()
+        )
+        if existing:
+            for key, value in product_data.items():
+                if key == "stock_quantity" and existing.stock_quantity < value:
+                    setattr(existing, key, value)
+                elif key != "stock_quantity":
+                    setattr(existing, key, value)
+            product = existing
+        else:
+            product = models.Product(**product_data)
+            db.add(product)
+        products_by_archive_id[product_data["archive_id"]] = product
+    db.flush()
+    return products_by_archive_id
+
+
+def upsert_users(db):
+    users = []
+    for user_data in DEMO_USERS:
+        existing = db.query(models.User).filter(models.User.email == user_data["email"]).first()
+        if existing:
+            users.append(existing)
+            continue
+
+        user = models.User(
+            name=user_data["name"],
+            email=user_data["email"],
+            hashed_password=hash_password(user_data["password"]),
+        )
+        db.add(user)
+        users.append(user)
+    db.flush()
+    return users
+
+
+def create_demo_orders(db, products_by_archive_id, users):
+    if db.query(models.Order).count() > 0:
+        return
+
+    order_specs = [
+        (users[0], [("ARC-CLO-001", 1), ("ARC-BAG-002", 2)], "GCash", 2),
+        (users[1], [("ARC-ACC-003", 1)], "Cash on Delivery", 1),
+        (users[2], [("ARC-CLO-002", 2), ("ARC-ACC-002", 3)], "Bank Transfer", 0),
+    ]
+
+    for user, line_items, payment_method, days_ago in order_specs:
+        created_at = datetime.utcnow() - timedelta(days=days_ago)
+        total = 0.0
+        order = models.Order(
+            user_id=user.id,
+            total_amount=0.0,
+            status="paid",
+            customer_name=user.name,
+            customer_phone="09170000000",
+            shipping_address="Demo Street, Manila",
+            payment_method=payment_method,
+            delivery_zone="Zone 1",
+            created_at=created_at,
+        )
+        db.add(order)
+        db.flush()
+
+        for archive_id, quantity in line_items:
+            product = products_by_archive_id[archive_id]
+            subtotal = product.price * quantity
+            total += subtotal
+            db.add(
+                models.OrderItem(
+                    order_id=order.id,
+                    product_id=product.id,
+                    quantity=quantity,
+                    unit_price=product.price,
+                    subtotal=subtotal,
+                )
+            )
+            product.stock_quantity = max(product.stock_quantity - quantity, 0)
+            product.status = "sold_out" if product.stock_quantity == 0 else "available"
+
+        order.total_amount = round(total, 2)
+
 
 def seed():
     models.Base.metadata.create_all(bind=engine)
     db = SessionLocal()
-    
-    products = [
-        {
-            "archive_id": "ARC-0041",
-            "name": "Wool Overcoat",
-            "era": "Circa 1990s",
-            "brand": "UNIQLO ARCHIVE",
-            "srp": 4200.0,
-            "price": 1150.0,
-            "size": "M / US 38R",
-            "color": "Bone",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&q=85",
-                "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=900&q=85",
-            ]),
-            "fit_details": "Structured silhouette, falls below the knee.",
-            "fabric_details": "80% Virgin Wool, 20% Nylon.",
-            "condition_details": "Rated 8/10. Light pilling on cuffs.",
-        },
-        {
-            "archive_id": "ARC-0042",
-            "name": "Vintage Denim Jacket",
-            "era": "Circa 1980s",
-            "brand": "LEVI'S VINTAGE",
-            "srp": 5500.0,
-            "price": 2450.0,
-            "size": "L / US 42",
-            "color": "Indigo",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1544441893-675973e31985?w=900&q=85",
-                "https://images.unsplash.com/photo-1620052481128-44966603a1da?w=900&q=85",
-            ]),
-            "fit_details": "Classic trucker fit. Hits at the hip.",
-            "fabric_details": "100% Cotton heavy denim.",
-            "condition_details": "Perfectly distressed character.",
-        },
-        {
-            "archive_id": "ARC-0043",
-            "name": "Silk Floral Blouse",
-            "era": "Circa 1970s",
-            "brand": "VALENTINO ARCHIVE",
-            "srp": 8500.0,
-            "price": 3200.0,
-            "size": "S / EU 36",
-            "color": "Emerald",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1605763240000-7e93b172d754?w=900&q=85",
-                "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=900&q=85",
-            ]),
-            "fit_details": "Flowy, bohemian silhouette with puffed sleeves.",
-            "fabric_details": "100% Mulberry Silk.",
-            "condition_details": "Pristine condition. No visible flaws.",
-        },
-        {
-            "archive_id": "ARC-0044",
-            "name": "Leather Biker Boots",
-            "era": "Circa 2005",
-            "brand": "DR. MARTENS VINTAGE",
-            "srp": 9200.0,
-            "price": 4100.0,
-            "size": "9 US / 42 EU",
-            "color": "Cherry Red",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=900&q=85",
-                "https://images.unsplash.com/photo-1638247025967-b4e38f787b76?w=900&q=85",
-            ]),
-            "fit_details": "True to size. High ankle support.",
-            "fabric_details": "Full grain cowhide leather.",
-            "condition_details": "Well broken in. Minor scuffs on toe box.",
-        },
-        {
-            "archive_id": "ARC-0045",
-            "name": "Workwear Canvas Pants",
-            "era": "Circa 1990s",
-            "brand": "CARHARTT VINTAGE",
-            "srp": 3800.0,
-            "price": 1850.0,
-            "size": "32W x 30L",
-            "color": "Tan",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=900&q=85",
-            ]),
-            "fit_details": "Relaxed fit, straight leg.",
-            "fabric_details": "12oz 100% Cotton Duck Canvas.",
-            "condition_details": "Faded knees, perfectly aged.",
-        },
-        {
-            "archive_id": "ARC-0046",
-            "name": "Cashmere Knit Sweater",
-            "era": "Circa 2010",
-            "brand": "PRADA ARCHIVE",
-            "srp": 12000.0,
-            "price": 5400.0,
-            "size": "M / IT 48",
-            "color": "Navy",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=900&q=85",
-                "https://images.unsplash.com/photo-1574180563860-26b282c0dc14?w=900&q=85",
-            ]),
-            "fit_details": "Slim fit, ribbed collar.",
-            "fabric_details": "100% Mongolian Cashmere.",
-            "condition_details": "Excellent condition, professionally dry cleaned.",
-        },
-        {
-            "archive_id": "ARC-0047",
-            "name": "Leather Chelsea Boots",
-            "era": "Circa 2015",
-            "brand": "SAINT LAURENT PARIS",
-            "srp": 45000.0,
-            "price": 18500.0,
-            "size": "43 EU / 10 US",
-            "color": "Black",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1638247025967-b4e38f787b76?w=900&q=85",
-                "https://images.unsplash.com/photo-1605733513597-a8f8d410fe3c?w=900&q=85",
-            ]),
-            "fit_details": "Narrow fit, 30mm heel.",
-            "fabric_details": "Smooth calfskin leather.",
-            "condition_details": "Light wear on soles, uppers are perfect.",
-        },
-        {
-            "archive_id": "ARC-0048",
-            "name": "Graphic Print T-Shirt",
-            "era": "Circa 1994",
-            "brand": "NIRVANA VINTAGE",
-            "srp": 15000.0,
-            "price": 6200.0,
-            "size": "XL / US 46",
-            "color": "Faded Black",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=900&q=85",
-            ]),
-            "fit_details": "Oversized, boxy fit.",
-            "fabric_details": "100% Heavyweight Cotton.",
-            "condition_details": "Single stitch, cracked print (desirable).",
-        },
-        {
-            "archive_id": "ARC-0049",
-            "name": "Pleated Wool Trousers",
-            "era": "Circa 1990s",
-            "brand": "COMME DES GARCONS",
-            "srp": 16000.0,
-            "price": 6800.0,
-            "size": "30W x 31L",
-            "color": "Charcoal",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=900&q=85",
-                "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=900&q=85",
-            ]),
-            "fit_details": "Relaxed top block with a clean tapered leg.",
-            "fabric_details": "Midweight wool gabardine with soft drape.",
-            "condition_details": "Rated 9/10. Freshly pressed with no visible flaws.",
-        },
-        {
-            "archive_id": "ARC-0050",
-            "name": "Linen Camp Collar Shirt",
-            "era": "Circa 2000s",
-            "brand": "ISSEY MIYAKE MEN",
-            "srp": 9800.0,
-            "price": 3900.0,
-            "size": "M / Boxy",
-            "color": "Ivory",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=900&q=85",
-                "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=900&q=85",
-            ]),
-            "fit_details": "Boxy resort fit with dropped shoulders.",
-            "fabric_details": "Breathable linen blend with natural slub texture.",
-            "condition_details": "Excellent condition. Minor texture variation from linen.",
-        },
-        {
-            "archive_id": "ARC-0051",
-            "name": "Suede Harrington Jacket",
-            "era": "Circa 1980s",
-            "brand": "RALPH LAUREN VINTAGE",
-            "srp": 22000.0,
-            "price": 7600.0,
-            "size": "L / US 42",
-            "color": "Cognac",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=900&q=85",
-                "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&q=85",
-                "https://images.unsplash.com/photo-1544441893-675973e31985?w=900&q=85",
-            ]),
-            "fit_details": "Classic cropped Harrington shape with ribbed hem.",
-            "fabric_details": "Soft suede shell with lightweight lining.",
-            "condition_details": "Rated 8/10. Gentle patina on sleeve edges.",
-        },
-        {
-            "archive_id": "ARC-0052",
-            "name": "Silk Pocket Scarf",
-            "era": "Circa 1970s",
-            "brand": "HERMES PARIS",
-            "srp": 18000.0,
-            "price": 5900.0,
-            "size": "One Size",
-            "color": "Saffron Multi",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1584030373081-f37b7bb4fa8e?w=900&q=85",
-                "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=900&q=85",
-            ]),
-            "fit_details": "Can be worn as a pocket square, neck scarf, or bag accent.",
-            "fabric_details": "100% silk twill with hand-rolled edges.",
-            "condition_details": "Pristine print. No pulls or staining.",
-        },
-        {
-            "archive_id": "ARC-0053",
-            "name": "Minimalist Leather Tote",
-            "era": "Circa 2010",
-            "brand": "CELINE ARCHIVE",
-            "srp": 62000.0,
-            "price": 21400.0,
-            "size": "Large",
-            "color": "Black",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=900&q=85",
-                "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=900&q=85",
-            ]),
-            "fit_details": "Structured carry-all with room for a laptop and daily essentials.",
-            "fabric_details": "Smooth calfskin leather with tonal hardware.",
-            "condition_details": "Rated 8.5/10. Light creasing, clean interior.",
-        },
-        {
-            "archive_id": "ARC-0054",
-            "name": "Mohair Cardigan",
-            "era": "Circa 1990s",
-            "brand": "YOHJI YAMAMOTO",
-            "srp": 28000.0,
-            "price": 11200.0,
-            "size": "M / Relaxed",
-            "color": "Oatmeal",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=900&q=85",
-                "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=900&q=85",
-            ]),
-            "fit_details": "Slouchy relaxed fit designed for layering.",
-            "fabric_details": "Mohair wool blend with horn-style buttons.",
-            "condition_details": "Excellent nap and shape. No holes.",
-        },
-        {
-            "archive_id": "ARC-0055",
-            "name": "Raw Hem Maxi Skirt",
-            "era": "Circa 2000s",
-            "brand": "ANN DEMEULEMEESTER",
-            "srp": 26000.0,
-            "price": 9700.0,
-            "size": "S / EU 36",
-            "color": "Washed Black",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1516762689617-e1cffcef479d?w=900&q=85",
-                "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=900&q=85",
-                "https://images.unsplash.com/photo-1605763240000-7e93b172d754?w=900&q=85",
-            ]),
-            "fit_details": "Long column silhouette with raw asymmetric hem.",
-            "fabric_details": "Cotton viscose blend with subtle sheen.",
-            "condition_details": "Intentional raw finish. No structural damage.",
-        },
-        {
-            "archive_id": "ARC-0056",
-            "name": "Silver Signet Ring",
-            "era": "Circa 1980s",
-            "brand": "TAXCO VINTAGE",
-            "srp": 7200.0,
-            "price": 2800.0,
-            "size": "US 8",
-            "color": "Sterling Silver",
-            "status": "available",
-            "images": json.dumps([
-                "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=900&q=85",
-                "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=900&q=85",
-            ]),
-            "fit_details": "Classic unisex signet profile.",
-            "fabric_details": "Sterling silver with polished face.",
-            "condition_details": "Light vintage surface marks, professionally polished.",
-        }
-    ]
+    try:
+        products_by_archive_id = upsert_products(db)
+        users = upsert_users(db)
+        create_demo_orders(db, products_by_archive_id, users)
+        db.commit()
+        print(f"Database seeded successfully with {len(PRODUCTS)} products and demo checkout data.")
+        print("Demo login: demo@example.com / DemoPass123")
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
-    for p_data in products:
-        existing = db.query(models.Product).filter(models.Product.archive_id == p_data["archive_id"]).first()
-        if existing:
-            for key, value in p_data.items():
-                if key == "status" and existing.status in {"reserved", "sold"}:
-                    continue
-                setattr(existing, key, value)
-        else:
-            db.add(models.Product(**p_data))
-    
-    db.commit()
-    print(f"Database seeded successfully with {len(products)} products.")
 
 if __name__ == "__main__":
     seed()

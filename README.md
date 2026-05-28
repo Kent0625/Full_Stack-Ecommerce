@@ -1,30 +1,78 @@
-# Archive Premium Thrift - Full-Stack E-Commerce
+# Archive Thrift - Cloud Computing Final Project
 
-Archive is a premium thrift-store e-commerce app built with a Next.js storefront, FastAPI backend, PostgreSQL transactional database, separate PostgreSQL reporting database, and a cron-driven ETL pipeline.
+Archive Thrift is a demo-ready full-stack thrift-store e-commerce system with a premium storefront, FastAPI API, PostgreSQL transactional database, separate PostgreSQL reporting database, cron-runnable ETL, and an analytics dashboard.
 
-## Requirement 
+## Tech Stack
 
-| Requirement | Status | Where |
-| --- | --- | --- |
-| Frontend UI | Implemented | `frontend/src/app`, `frontend/src/components` |
-| Backend API/server using FastAPI | Implemented | `backend/main.py` |
-| PostgreSQL main transactional database | Supported for production | `DATABASE_URL` in `backend/.env.example` |
-| Separate reporting database | Supported and used by analytics | `REPORTING_DATABASE_URL`, `backend/reporting_database.py` |
-| Automated ETL using Linux cron | Implemented | `backend/etl.py`, `backend/run_etl.sh` |
-| Reporting dashboard | Implemented | `frontend/src/app/dashboard/page.tsx` |
-| Analytics: sales, revenue, top products, customers | Implemented | `/analytics/summary`, `/analytics/sales`, `/analytics/top-products`, `/analytics/customers` |
-| VPS deployment documentation | Included | VPS section below |
+| Layer | Technology |
+| --- | --- |
+| Frontend | Next.js App Router, React, TypeScript, Tailwind CSS, lucide-react |
+| Backend | FastAPI, SQLAlchemy, Uvicorn/Gunicorn |
+| Main DB | PostgreSQL transactional database |
+| Reporting DB | Separate PostgreSQL analytics database |
+| ETL | Python script runnable manually or by Linux cron |
+| VPS Runtime | Ubuntu, Nginx, systemd, PM2, PostgreSQL |
 
-Local development can fall back to SQLite, but the submitted VPS deployment should use PostgreSQL URLs for both databases.
+Local development can use SQLite fallback files, but VPS deployment should use PostgreSQL URLs for both databases.
+
+## Features
+
+- Premium responsive thrift-store UI.
+- Landing page with hero, featured products, and category sections.
+- Product listing with search and filters for Clothing, Bags, and Accessories.
+- Product detail page with images, price, category, description, stock, and add-to-cart.
+- Register/login with password hashing and JWT authentication.
+- Quantity-aware frontend cart with localStorage persistence.
+- Protected checkout that creates real backend orders and order items.
+- Stock reduction and sold-out status updates after checkout.
+- Reporting dashboard for total revenue, total orders, customers, daily sales, top products, and customer growth.
+- ETL from transactional DB to reporting DB.
+- Hostinger VPS deployment guide in [docs/HOSTINGER_VPS_DEPLOYMENT.md](docs/HOSTINGER_VPS_DEPLOYMENT.md).
 
 ## Architecture
 
-- **Frontend:** Next.js App Router, React 19, Tailwind CSS v4.
-- **Backend:** FastAPI, SQLAlchemy, Gunicorn/Uvicorn.
-- **Transactional DB:** PostgreSQL database for users, products, reservations, and orders.
-- **Reporting DB:** Separate PostgreSQL database for dimensional/fact reporting tables.
-- **ETL:** `backend/etl.py` extracts from the transactional DB, loads reporting dimensions/facts, and updates daily sales summaries.
-- **Cron:** `backend/run_etl.sh` loads `.env`, activates the backend virtual environment, and runs the ETL script.
+```mermaid
+flowchart LR
+  Browser["Next.js frontend"] -->|/api reverse proxy| FastAPI["FastAPI backend"]
+  FastAPI --> MainDB["PostgreSQL main DB"]
+  ETL["backend/etl.py via cron"] --> MainDB
+  ETL --> ReportingDB["PostgreSQL reporting DB"]
+  FastAPI --> ReportingDB
+  Dashboard["Dashboard page"] -->|analytics APIs| FastAPI
+```
+
+## Database Schema
+
+Transactional database:
+
+- `users`: `id`, `name`, `email`, `hashed_password`, `created_at`
+- `products`: `id`, `name`, `description`, `price`, `category`, `image_url`, `stock_quantity`, `status`, `created_at`
+- `orders`: `id`, `user_id`, `total_amount`, `status`, customer/shipping/payment fields, `created_at`
+- `order_items`: `id`, `order_id`, `product_id`, `quantity`, `unit_price`, `subtotal`
+
+Reporting database:
+
+- `dim_products`
+- `dim_customers`
+- `fact_orders`
+- `fact_order_items`
+- `daily_sales_summary`
+
+## API Endpoints
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/auth/register` | Create user and return JWT |
+| `POST` | `/auth/login` | Login and return JWT |
+| `GET` | `/auth/me` | Validate JWT and return current user |
+| `GET` | `/products` | List products, supports `category` and `search` |
+| `GET` | `/products/{id}` | Product details |
+| `POST` | `/orders` | Protected checkout, creates order and order items |
+| `GET` | `/orders/me` | Current user's orders |
+| `GET` | `/analytics/summary` | Revenue, orders, customers |
+| `GET` | `/analytics/sales` | Daily sales summary |
+| `GET` | `/analytics/top-products` | Top products by units sold |
+| `GET` | `/analytics/customers` | Customer growth |
 
 ## Local Setup
 
@@ -37,13 +85,21 @@ source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 python seed.py
+python etl.py
 uvicorn main:app --reload
 ```
 
-On Windows, activate the virtual environment with:
+Windows PowerShell:
 
 ```powershell
+cd backend
+python -m venv venv
 venv\Scripts\activate
+pip install -r requirements.txt
+Copy-Item .env.example .env
+python seed.py
+python etl.py
+uvicorn main:app --reload
 ```
 
 ### Frontend
@@ -55,158 +111,63 @@ cp .env.example .env.local
 npm run dev
 ```
 
-### Run ETL Locally
+Open `http://localhost:3000`. The frontend proxies `/api/*` to `BACKEND_URL` from `frontend/.env.local`.
+
+## Environment Variables
+
+Backend `backend/.env`:
+
+```env
+DATABASE_URL=sqlite:///./thrift_main.sqlite
+REPORTING_DATABASE_URL=sqlite:///./thrift_reporting.sqlite
+JWT_SECRET_KEY=replace_with_a_long_random_secret
+JWT_EXPIRES_SECONDS=86400
+FRONTEND_URL=http://localhost:3000
+REDIS_URL=
+```
+
+For Hostinger VPS, replace the SQLite URLs with PostgreSQL URLs as shown in the deployment guide.
+
+Frontend `frontend/.env.local`:
+
+```env
+NEXT_PUBLIC_API_URL=/api
+BACKEND_URL=http://127.0.0.1:8000
+```
+
+## ETL Process
+
+Run manually:
 
 ```bash
 cd backend
 python etl.py
 ```
 
-The dashboard reads from the reporting database, so run ETL after creating test orders.
-
-## VPS Deployment Guide
-
-These steps assume Ubuntu on a VPS with Nginx, PostgreSQL, Redis, PM2, and one domain name.
-
-### 1. Server Packages
+Cron script:
 
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install python3-pip python3-venv nginx postgresql postgresql-contrib redis-server curl git -y
-```
-
-### 2. Node.js and PM2
-
-```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
-source ~/.bashrc
-nvm install 20
-npm install -g pm2
-```
-
-### 3. PostgreSQL Databases
-
-```bash
-sudo -u postgres psql
-CREATE DATABASE thrift_db;
-CREATE DATABASE thrift_reporting_db;
-CREATE USER thrift_user WITH ENCRYPTED PASSWORD 'change_this_password';
-GRANT ALL PRIVILEGES ON DATABASE thrift_db TO thrift_user;
-GRANT ALL PRIVILEGES ON DATABASE thrift_reporting_db TO thrift_user;
-\q
-```
-
-### 4. Clone and Configure
-
-```bash
-git clone https://github.com/Kent0625/thrift_store.git
-cd thrift_store/backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-nano .env
-```
-
-Use production values:
-
-```env
-DATABASE_URL=postgresql://thrift_user:change_this_password@localhost:5432/thrift_db
-REPORTING_DATABASE_URL=postgresql://thrift_user:change_this_password@localhost:5432/thrift_reporting_db
-REDIS_URL=redis://localhost:6379/0
-FRONTEND_URL=http://your-domain.com
-```
-
-Seed initial product data if needed:
-
-```bash
-python seed.py
-```
-
-### 5. Start Backend
-
-```bash
-pm2 start "gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 127.0.0.1:8000" --name archive-backend
-```
-
-### 6. Build and Start Frontend
-
-```bash
-cd ../frontend
-npm install
-cp .env.example .env.local
-npm run build
-pm2 start npm --name archive-frontend -- start
-pm2 save
-pm2 startup
-```
-
-For a standard VPS/Nginx deployment, keep `NEXT_PUBLIC_API_URL=/api` so browser requests go through the reverse proxy.
-
-### 7. Nginx Reverse Proxy
-
-Create `/etc/nginx/sites-available/archive`:
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    location /api/ {
-        rewrite ^/api/(.*) /$1 break;
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
-```
-
-Enable it:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/archive /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-### 8. Cron ETL
-
-Make the ETL script executable:
-
-```bash
-cd /path/to/thrift_store/backend
+cd backend
 chmod +x run_etl.sh
+./run_etl.sh
 ```
 
-Edit cron:
+The ETL extracts users, products, orders, and order items from the transactional database, loads reporting dimensions/facts, and rebuilds `daily_sales_summary`.
 
-```bash
-crontab -e
-```
+## Demo Flow
 
-Run ETL every night at midnight:
+1. Start PostgreSQL or use local SQLite fallback.
+2. Start backend with `uvicorn main:app --reload`.
+3. Run `python seed.py` to create sample thrift products and demo orders.
+4. Run `python etl.py` to populate the reporting database.
+5. Start frontend with `npm run dev`.
+6. Visit the home page, browse products, filter by category, and open a product detail page.
+7. Login with `demo@example.com` / `DemoPass123` or register a new account.
+8. Add products to cart and checkout.
+9. Run `python etl.py` again.
+10. Refresh `/dashboard` to show updated sales, revenue, top products, and customers.
 
-```cron
-0 0 * * * /path/to/thrift_store/backend/run_etl.sh >> /path/to/thrift_store/backend/etl.log 2>&1
-```
-
-You can test it manually:
-
-```bash
-/path/to/thrift_store/backend/run_etl.sh
-```
-
-## Verification
+## Verification Commands
 
 Backend:
 
@@ -214,12 +175,23 @@ Backend:
 cd backend
 python -m unittest discover -s tests
 python -m compileall .
+python seed.py
+python etl.py
 ```
 
 Frontend:
 
 ```bash
 cd frontend
+npm install
 npm run lint
 npm run build
 ```
+
+## VPS Deployment
+
+Use the complete Hostinger Ubuntu VPS guide:
+
+[docs/HOSTINGER_VPS_DEPLOYMENT.md](docs/HOSTINGER_VPS_DEPLOYMENT.md)
+
+It includes SSH, package installation, PostgreSQL users/databases, environment files, backend systemd, frontend PM2, Nginx reverse proxy, cron ETL, testing, and troubleshooting.

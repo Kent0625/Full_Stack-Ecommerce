@@ -1,129 +1,213 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowRight, BadgeCheck, BarChart3, Leaf } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import ProductCard from "@/components/ProductCard";
 import { fetchProducts } from "@/lib/api";
-import type { Product } from "@/lib/types";
-import ProductCard from "./ProductCard";
+import type { Category, Product } from "@/lib/types";
+
+const categories: Array<{ name: Category; image: string; copy: string }> = [
+  {
+    name: "Clothing",
+    copy: "Jackets, shirts, trousers, and wearable archive staples.",
+    image: "https://images.unsplash.com/photo-1516762689617-e1cffcef479d?w=900&q=85",
+  },
+  {
+    name: "Bags",
+    copy: "Daily totes, leather shoulders, and compact carry pieces.",
+    image: "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=900&q=85",
+  },
+  {
+    name: "Accessories",
+    copy: "Sunglasses, bracelets, watches, and finishing details.",
+    image: "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=900&q=85",
+  },
+];
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function load() {
-      try {
-        const data = await fetchProducts();
-        setProducts(data);
-      } catch (err) {
+    fetchProducts()
+      .then(setProducts)
+      .catch((err: unknown) => {
         console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+        setError(err instanceof Error ? err.message : "Products are unavailable.");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
+  const featuredProducts = useMemo(() => products.slice(0, 8), [products]);
+
   return (
-    <main id="main-content" className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-black">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80"
-            alt="Curated vintage store interior"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover opacity-60"
-          />
-        </div>
-        <div className="relative z-10 text-center text-white px-4">
-          <h1 className="text-6xl md:text-8xl font-playfair mb-6 tracking-tight italic">
-            Archival Objects
-          </h1>
-          <p className="text-xs md:text-sm uppercase tracking-[0.3em] font-medium opacity-80 mb-10">
-            Curated vintage for the modern minimalist
-          </p>
-          <a 
-            href="#collection"
-            className="inline-block border border-white px-10 py-4 text-[10px] uppercase tracking-widest hover:bg-white hover:text-black transition-colors duration-300"
-          >
-            Explore Collection
-          </a>
+    <main id="main-content" className="min-h-screen bg-archive-ivory">
+      <section className="relative min-h-[92vh] overflow-hidden bg-archive-green-dark pt-24 text-white">
+        <Image
+          src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1800&q=85"
+          alt="Premium thrift store interior with curated clothing racks"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-38"
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(185,161,107,0.28),transparent_32%),linear-gradient(90deg,#03281f_0%,rgba(3,40,31,0.92)_44%,rgba(6,59,47,0.55)_100%)]" />
+        <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-archive-ivory to-transparent" />
+        <div className="relative z-10 mx-auto grid min-h-[calc(92vh-6rem)] max-w-7xl grid-cols-1 items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="max-w-3xl">
+            <p className="mb-6 inline-flex items-center gap-2 rounded-sm border border-archive-gold/40 bg-white/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-archive-gold">
+              <Leaf size={15} />
+              Curated pre-loved pieces
+            </p>
+            <h1 className="font-playfair text-5xl font-semibold leading-[0.95] tracking-normal sm:text-7xl lg:text-8xl">
+              Archive Thrift
+            </h1>
+            <div className="my-7 h-px w-56 bg-archive-gold" />
+            <p className="mt-7 max-w-2xl text-base leading-8 text-slate-100 sm:text-lg">
+              A premium thrift-store marketplace for curated clothing, bags, and accessories, made for
+              easy browsing and a smooth checkout experience.
+            </p>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/products"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-sm bg-archive-gold px-5 text-sm font-black uppercase tracking-[0.14em] text-archive-green-dark transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+              >
+                Shop Collection
+                <ArrowRight size={17} />
+              </Link>
+              <Link
+                href="/dashboard"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-sm border border-archive-gold/50 px-5 text-sm font-black uppercase tracking-[0.14em] text-white transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+              >
+                View Analytics
+                <BarChart3 size={17} />
+              </Link>
+            </div>
+          </div>
+
+          <div className="hidden rounded-sm border border-archive-gold/25 bg-white/10 p-5 backdrop-blur-md luxury-shadow lg:block">
+            <div className="grid grid-cols-2 gap-3">
+              {categories.map((category) => (
+                <Link
+                  href={`/products?category=${category.name}`}
+                  key={category.name}
+                  className="group relative min-h-44 overflow-hidden rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white first:col-span-2"
+                >
+                  <Image
+                    src={category.image}
+                    alt={`${category.name} category`}
+                    fill
+                    sizes="(min-width: 1024px) 22vw, 50vw"
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-slate-950/35" />
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <p className="font-playfair text-2xl font-semibold">{category.name}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-100">{category.copy}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Marquee */}
-      <div className="bg-black text-white py-4 overflow-hidden whitespace-nowrap border-y border-white/10">
-        <div className="animate-marquee inline-block">
-          <span className="mx-10 text-[10px] uppercase tracking-[0.5em] font-semibold">Limited Release</span>
-          <span className="mx-10 text-[10px] uppercase tracking-[0.5em] font-semibold">Worldwide Shipping</span>
-          <span className="mx-10 text-[10px] uppercase tracking-[0.5em] font-semibold">Authenticated Pieces</span>
-          <span className="mx-10 text-[10px] uppercase tracking-[0.5em] font-semibold">Curated in Tokyo</span>
+      <section className="border-y border-archive-gold/25 bg-white">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-6 sm:px-6 md:grid-cols-3">
+          {[
+            ["Three Categories", "Clothing, Bags, Accessories"],
+            ["Secure Checkout", "Fast, personal order flow"],
+            ["Store Insights", "Performance at a glance"],
+          ].map(([title, copy]) => (
+            <div key={title} className="flex items-center gap-3">
+              <BadgeCheck className="text-archive-gold" size={21} />
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.12em] text-archive-green-dark">{title}</p>
+                <p className="text-sm text-slate-500">{copy}</p>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="animate-marquee inline-block">
-          <span className="mx-10 text-[10px] uppercase tracking-[0.5em] font-semibold">Limited Release</span>
-          <span className="mx-10 text-[10px] uppercase tracking-[0.5em] font-semibold">Worldwide Shipping</span>
-          <span className="mx-10 text-[10px] uppercase tracking-[0.5em] font-semibold">Authenticated Pieces</span>
-          <span className="mx-10 text-[10px] uppercase tracking-[0.5em] font-semibold">Curated in Tokyo</span>
-        </div>
-      </div>
+      </section>
 
-      {/* Product Grid */}
-      <section id="collection" className="max-w-7xl mx-auto px-6 py-24">
-        <div className="flex flex-col md:flex-row justify-between items-baseline mb-16 border-b border-gray-100 pb-8">
-          <h2 className="text-3xl font-playfair">Latest Arrivals</h2>
-          <p className="text-[10px] uppercase tracking-widest text-gray-400 mt-4 md:mt-0">
-            {products.length} Items Available
-          </p>
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-archive-gold">Latest Drops</p>
+            <h2 className="mt-3 font-playfair text-4xl font-semibold tracking-normal text-archive-green-dark">
+              Featured products
+            </h2>
+          </div>
+          <Link
+            href="/products"
+            className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.14em] text-archive-green-dark hover:text-archive-gold"
+          >
+            See all products
+            <ArrowRight size={17} />
+          </Link>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-12">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="aspect-[3/4] bg-gray-200 mb-4"></div>
-                <div className="h-4 bg-gray-200 w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 w-1/4"></div>
-              </div>
-            ))}
+          <ProductSkeleton />
+        ) : error ? (
+          <div className="rounded-sm border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-800">
+            {error}
+          </div>
+        ) : featuredProducts.length === 0 ? (
+          <div className="rounded-sm border border-archive-gold/25 bg-white p-10 text-center text-slate-500">
+            No products yet. Run the backend seed script to load the thrift catalog.
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-12">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} compact />
             ))}
           </div>
         )}
       </section>
-      
-      {/* Footer */}
-      <footer className="border-t border-gray-100 py-20 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="col-span-1 md:col-span-2">
-            <h3 className="text-2xl font-playfair mb-6 italic">Archive</h3>
-            <p className="text-sm text-gray-500 max-w-xs leading-relaxed">
-              We curate high-end archival garments from the 80s to the present day, focusing on Japanese and European avant-garde designers.
-            </p>
-          </div>
-          <div>
-            <h4 className="text-[10px] uppercase tracking-widest font-bold mb-6">Service</h4>
-            <ul className="text-sm text-gray-500 space-y-4">
-              <li><a href="#" className="hover:text-black transition-colors">Shipping</a></li>
-              <li><a href="#" className="hover:text-black transition-colors">Authentication</a></li>
-              <li><a href="#" className="hover:text-black transition-colors">Privacy</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-[10px] uppercase tracking-widest font-bold mb-6">Social</h4>
-            <ul className="text-sm text-gray-500 space-y-4">
-              <li><a href="#" className="hover:text-black transition-colors">Instagram</a></li>
-              <li><a href="#" className="hover:text-black transition-colors">Twitter</a></li>
-            </ul>
-          </div>
+
+      <section className="bg-archive-green-dark text-white">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-16 sm:px-6 lg:grid-cols-3">
+          {categories.map((category) => (
+            <Link
+              href={`/products?category=${category.name}`}
+              key={category.name}
+              className="group focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+            >
+              <div className="relative aspect-[4/3] overflow-hidden rounded-sm">
+                <Image
+                  src={category.image}
+                  alt={`${category.name} thrift category`}
+                  fill
+                  sizes="(min-width: 1024px) 33vw, 100vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
+              <h3 className="mt-5 font-playfair text-3xl font-semibold tracking-normal">{category.name}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-300">{category.copy}</p>
+              <div className="mt-5 h-px w-20 bg-archive-gold" />
+            </Link>
+          ))}
         </div>
-      </footer>
+      </section>
     </main>
+  );
+}
+
+function ProductSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" aria-live="polite">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <div key={index} className="animate-pulse rounded-sm border border-archive-gold/20 bg-white p-4">
+          <div className="aspect-[4/5] rounded-sm bg-slate-200" />
+          <div className="mt-4 h-4 w-3/4 rounded bg-slate-200" />
+          <div className="mt-3 h-4 w-1/2 rounded bg-slate-200" />
+          <div className="mt-5 h-10 rounded bg-slate-200" />
+        </div>
+      ))}
+    </div>
   );
 }

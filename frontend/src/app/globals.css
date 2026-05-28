@@ -3,12 +3,11 @@
 @theme {
   --font-playfair: Georgia, "Times New Roman", serif;
   --font-dm-sans: "Inter", "Segoe UI", Arial, sans-serif;
-  
-  --color-charcoal: #111110;
-  --color-warm-white: #F5F4F0;
-  --color-muted-gray: #8A8A85;
-  --color-accent-navy: #1A2340;
-  --color-reserved-amber: #B89A6A;
+  --color-archive-green: #063b2f;
+  --color-archive-green-dark: #03281f;
+  --color-archive-gold: #b9a16b;
+  --color-archive-ivory: #f7f5ef;
+  --color-archive-graphite: #161a17;
 
   --animate-marquee: marquee 40s linear infinite;
 
@@ -20,7 +19,7 @@
 
 @layer base {
   body {
-    @apply bg-warm-white text-charcoal antialiased;
+    @apply bg-archive-ivory text-archive-graphite antialiased;
     overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
   }
@@ -31,21 +30,117 @@
 }
 
 @layer utilities {
+  .bg-archive-green {
+    background-color: #063b2f;
+  }
+
+  .bg-archive-green-dark {
+    background-color: #03281f;
+  }
+
+  .bg-archive-green-dark\/90 {
+    background-color: rgb(3 40 31 / 0.9);
+  }
+
+  .bg-archive-green-dark\/95 {
+    background-color: rgb(3 40 31 / 0.95);
+  }
+
+  .bg-archive-gold {
+    background-color: #b9a16b;
+  }
+
+  .bg-archive-ivory {
+    background-color: #f7f5ef;
+  }
+
+  .text-archive-graphite {
+    color: #161a17;
+  }
+
+  .text-archive-green {
+    color: #063b2f;
+  }
+
+  .text-archive-green-dark {
+    color: #03281f;
+  }
+
+  .text-archive-gold {
+    color: #b9a16b;
+  }
+
+  .border-archive-gold\/20 {
+    border-color: rgb(185 161 107 / 0.2);
+  }
+
+  .border-archive-gold\/25 {
+    border-color: rgb(185 161 107 / 0.25);
+  }
+
+  .border-archive-gold\/30 {
+    border-color: rgb(185 161 107 / 0.3);
+  }
+
+  .border-archive-gold\/35 {
+    border-color: rgb(185 161 107 / 0.35);
+  }
+
+  .border-archive-gold\/40 {
+    border-color: rgb(185 161 107 / 0.4);
+  }
+
+  .border-archive-gold\/45 {
+    border-color: rgb(185 161 107 / 0.45);
+  }
+
+  .border-archive-gold\/50 {
+    border-color: rgb(185 161 107 / 0.5);
+  }
+
+  .hover\:bg-archive-gold:hover {
+    background-color: #b9a16b;
+  }
+
+  .hover\:text-archive-green-dark:hover {
+    color: #03281f;
+  }
+
+  .hover\:text-archive-gold:hover {
+    color: #b9a16b;
+  }
+
+  .focus\:border-archive-green-dark:focus {
+    border-color: #03281f;
+  }
+
+  .focus-visible\:outline-archive-green-dark:focus-visible {
+    outline-color: #03281f;
+  }
+
   .text-luxury {
-    @apply tracking-[0.2em] uppercase;
+    @apply uppercase tracking-[0.18em];
+  }
+
+  .gold-rule {
+    background: linear-gradient(90deg, transparent, #b9a16b, transparent);
+    height: 1px;
+  }
+
+  .luxury-shadow {
+    box-shadow: 0 24px 70px rgb(3 40 31 / 0.14);
   }
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #f7f5ef;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D0CEC8;
-  border-radius: 2px;
+  background: #b9a16b;
+  border-radius: 999px;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,163 +1,123 @@
 import type {
   AnalyticsSummary,
+  AuthResponse,
+  Category,
+  CreateOrderPayload,
   CustomerPoint,
+  Order,
   Product,
   SalesPoint,
   TopProduct,
+  User,
 } from "./types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
-type FetchOptions = RequestInit & { timeout?: number };
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 
-/**
- * Robust fetch wrapper to handle Render's "sleeping" instances 
- * and network timeouts common in production.
- */
-async function fetchWithTimeout(resource: string, options: FetchOptions = {}) {
-  const { timeout = 12000 } = options; // Increased to 12s for cold starts
-  
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-  
-  try {
-    const response = await fetch(resource, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-    clearTimeout(id);
-    return response;
-  } catch (error: unknown) {
-    clearTimeout(id);
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("Our boutique is taking a moment to open. Please retry.");
-    }
-    throw error;
-  }
+interface RequestOptions extends RequestInit {
+  token?: string | null;
 }
 
-/**
- * Fetch with retry logic for production stability
- */
-async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
-  for (let i = 0; i <= retries; i++) {
+async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const headers = new Headers(options.headers);
+  if (!headers.has("Content-Type") && options.body) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (options.token) {
+    headers.set("Authorization", `Bearer ${options.token}`);
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    let message = `Request failed with ${response.status}`;
     try {
-      const res = await fetchWithTimeout(url);
-      if (res.ok) return res;
-      if (res.status !== 503 && res.status !== 504) break; // Don't retry on user errors
-    } catch (error) {
-      if (i === retries) throw error;
+      const payload = await response.json();
+      if (typeof payload.detail === "string") message = payload.detail;
+      if (Array.isArray(payload.detail)) message = payload.detail[0]?.msg || message;
+    } catch {
+      message = response.statusText || message;
     }
-    await new Promise(r => setTimeout(r, 2000 * (i + 1)));
+    throw new Error(message);
   }
-  return fetch(url); // Final attempt
+
+  return response.json() as Promise<T>;
 }
 
-export async function fetchProducts(): Promise<Product[]> {
-  try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/products`);
-    if (!res.ok) throw new Error("Our boutique is currently resting. Please refresh in a moment.");
-    return res.json();
-  } catch (err) {
-    console.error("API Error:", err);
-    throw err;
-  }
+export function fetchProducts(filters: { category?: Category | "All"; search?: string } = {}) {
+  const params = new URLSearchParams();
+  if (filters.category && filters.category !== "All") params.set("category", filters.category);
+  if (filters.search?.trim()) params.set("search", filters.search.trim());
+  const query = params.toString();
+  return apiRequest<Product[]>(`/products${query ? `?${query}` : ""}`);
 }
 
-export async function fetchProduct(id: number): Promise<Product> {
-  try {
-    const url = `${API_BASE_URL}/products/${id}`;
-    console.log(`Fetching product from: ${url}`);
-    const res = await fetchWithRetry(url);
-    if (!res.ok) {
-      console.error(`Fetch failed for ${url}: Status ${res.status}`);
-      throw new Error("This piece is currently unavailable.");
-    }
-    return res.json();
-  } catch (err) {
-    console.error(`Error in fetchProduct for ID ${id}:`, err);
-    throw err;
-  }
+export function fetchProduct(productId: number) {
+  return apiRequest<Product>(`/products/${productId}`);
 }
 
-export async function reserveProduct(id: number) {
-  const res = await fetchWithTimeout(`${API_BASE_URL}/products/${id}/reserve`, {
+export function registerUser(payload: {
+  name: string;
+  email: string;
+  password: string;
+  confirm_password: string;
+}) {
+  return apiRequest<AuthResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function loginUser(payload: { email: string; password: string }) {
+  return apiRequest<AuthResponse>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchCurrentUser(token: string) {
+  return apiRequest<User>("/auth/me", { token });
+}
+
+export function createOrder(payload: CreateOrderPayload, token: string) {
+  return apiRequest<Order>("/orders", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    token,
+  });
+}
+
+export function fetchMyOrders(token: string) {
+  return apiRequest<Order[]>("/orders/me", { token });
+}
+
+export function fetchAnalyticsSummary() {
+  return apiRequest<AnalyticsSummary>("/analytics/summary");
+}
+
+export function fetchAnalyticsSales() {
+  return apiRequest<SalesPoint[]>("/analytics/sales");
+}
+
+export function fetchTopProducts() {
+  return apiRequest<TopProduct[]>("/analytics/top-products");
+}
+
+export function fetchCustomerAnalytics() {
+  return apiRequest<CustomerPoint[]>("/analytics/customers");
+}
+
+export function reserveProduct(productId: number) {
+  return apiRequest<{ message: string; ttl: number }>(`/products/${productId}/reserve`, {
     method: "POST",
   });
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.detail || "Unable to reserve this piece.");
-  }
-  return res.json();
 }
 
-export async function unreserveProduct(id: number) {
-  const res = await fetchWithTimeout(`${API_BASE_URL}/products/${id}/unreserve`, {
+export function unreserveProduct(productId: number) {
+  return apiRequest<{ message: string }>(`/products/${productId}/unreserve`, {
     method: "POST",
   });
-  if (!res.ok) {
-    throw new Error("Unable to release this piece.");
-  }
-  return res.json();
 }
-
-export async function checkoutProduct(id: number, zone: string, customerName?: string, customerPhone?: string) {
-  const params = new URLSearchParams({ delivery_zone: zone });
-
-  if (customerName) params.set("customer_name", customerName);
-  if (customerPhone) params.set("customer_phone", customerPhone);
-
-  const res = await fetchWithTimeout(`${API_BASE_URL}/products/${id}/checkout?${params.toString()}`, {
-    method: "POST",
-  });
-  if (!res.ok) throw new Error("Secure checkout failed. Please try again.");
-  return res.json();
-}
-
-export async function fetchAnalyticsSummary(): Promise<AnalyticsSummary> {
-  try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/analytics/summary`);
-    if (!res.ok) throw new Error("Failed to fetch analytics summary.");
-    return res.json();
-  } catch (err) {
-    console.error("API Error:", err);
-    throw err;
-  }
-}
-
-export async function fetchAnalyticsSales(): Promise<SalesPoint[]> {
-  try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/analytics/sales`);
-    if (!res.ok) throw new Error("Failed to fetch sales analytics.");
-    return res.json();
-  } catch (err) {
-    console.error("API Error:", err);
-    throw err;
-  }
-}
-
-export async function fetchTopProducts(): Promise<TopProduct[]> {
-  try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/analytics/top-products`);
-    if (!res.ok) throw new Error("Failed to fetch top products.");
-    return res.json();
-  } catch (err) {
-    console.error("API Error:", err);
-    throw err;
-  }
-}
-
-export async function fetchCustomerAnalytics(): Promise<CustomerPoint[]> {
-  try {
-    const res = await fetchWithRetry(`${API_BASE_URL}/analytics/customers`);
-    if (!res.ok) throw new Error("Failed to fetch customer analytics.");
-    return res.json();
-  } catch (err) {
-    console.error("API Error:", err);
-    throw err;
-  }
-}
-
