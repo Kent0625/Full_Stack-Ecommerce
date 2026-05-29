@@ -10,7 +10,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 
 const fallbackImage = "https://images.unsplash.com/photo-1544441893-675973e31985?w=300&q=85";
-const paymentMethods = ["Cash on Delivery", "GCash", "Bank Transfer", "Online Payment"];
+const paymentMethods = ["Cash on Delivery", "GCash", "Online Payment"];
+const shippingProviders = [
+  { name: "J&T Express", fee: 150 },
+  { name: "Flash Express", fee: 180 },
+];
 
 export default function CartPage() {
   const { user, token } = useAuth();
@@ -20,13 +24,15 @@ export default function CartPage() {
     customer_phone: "",
     shipping_address: "",
     payment_method: paymentMethods[0],
-    delivery_zone: "Zone 1",
+    delivery_zone: shippingProviders[0].name,
   });
   const [error, setError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [paymentReference] = useState(() => `ARCHIVE-${Math.floor(Date.now() / 1000)}`);
 
-  const shippingFee = form.delivery_zone === "Zone 1" ? 120 : 180;
+  const selectedProvider = shippingProviders.find((p) => p.name === form.delivery_zone) || shippingProviders[0];
+  const shippingFee = selectedProvider.fee;
   const grandTotal = useMemo(() => subtotal + (cart.length > 0 ? shippingFee : 0), [subtotal, shippingFee, cart.length]);
   const customerName = form.customer_name || user?.name || "";
 
@@ -223,14 +229,15 @@ export default function CartPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Delivery</span>
+                  <span className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Logistics</span>
                   <select
                     value={form.delivery_zone}
                     onChange={(event) => updateField("delivery_zone", event.target.value)}
                     className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-3 text-sm font-semibold outline-none focus:border-archive-green-dark"
                   >
-                    <option>Zone 1</option>
-                    <option>Zone 2</option>
+                    {shippingProviders.map((provider) => (
+                      <option key={provider.name}>{provider.name}</option>
+                    ))}
                   </select>
                 </label>
                 <label className="block">
@@ -247,6 +254,23 @@ export default function CartPage() {
                 </label>
               </div>
 
+              {(form.payment_method === "GCash" || form.payment_method === "Online Payment") && (
+                <div className="rounded-sm border border-archive-gold/25 bg-white p-6 text-center shadow-sm">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-archive-green-dark">
+                    Scan to pay via {form.payment_method}
+                  </p>
+                  <div className="mx-auto mt-4 flex aspect-square w-48 items-center justify-center border-2 border-archive-green-dark/10 bg-slate-50 p-4">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=archive-thrift-payment-${grandTotal}-${paymentReference}`}
+                      alt="Payment QR Code"
+                      className="h-full w-full grayscale"
+                    />
+                  </div>
+                  <p className="mt-4 text-[11px] font-semibold text-slate-400 italic">
+                    Reference: {paymentReference}
+                  </p>
+                </div>
+              )}
               <div className="space-y-3 border-t border-archive-gold/25 pt-5 text-sm">
                 <SummaryRow label={`Subtotal (${totalItems} items)`} value={pesoFormatter.format(subtotal)} />
                 <SummaryRow label="Shipping" value={cart.length > 0 ? pesoFormatter.format(shippingFee) : pesoFormatter.format(0)} />

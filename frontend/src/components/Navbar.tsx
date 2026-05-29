@@ -3,15 +3,21 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BarChart3, LogOut, ShoppingBag, Store, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 
 export default function Navbar() {
   const { totalItems, setIsCartOpen } = useCart();
   const { user, logout } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-archive-green-dark/95 text-white backdrop-blur-md">
+    <nav className="fixed inset-x-0 top-0 z-40 animate-fade-in border-b border-white/10 bg-archive-green-dark/95 text-white backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-3 sm:px-6">
         <Link
           href="/"
@@ -39,7 +45,7 @@ export default function Navbar() {
             <span>Dashboard</span>
           </Link>
 
-          {user ? (
+          {mounted && user ? (
             <div className="flex items-center gap-1 sm:gap-2">
               <span className="hidden max-w-32 truncate text-xs font-bold text-white/75 md:block">{user.name}</span>
               <button
@@ -69,7 +75,7 @@ export default function Navbar() {
             className="relative flex h-10 w-10 items-center justify-center rounded-sm bg-archive-gold text-archive-green-dark transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             <ShoppingBag size={18} />
-            {totalItems > 0 && (
+            {mounted && totalItems > 0 && (
               <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-700 px-1 text-[10px] font-bold tabular-nums text-white">
                 {totalItems}
               </span>

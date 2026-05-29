@@ -6,6 +6,7 @@ import type {
   CustomerPoint,
   Order,
   Product,
+  RecentSale,
   SalesPoint,
   TopProduct,
   User,
@@ -106,9 +107,14 @@ export function fetchTopProducts() {
   return apiRequest<TopProduct[]>("/analytics/top-products");
 }
 
+export function fetchRecentSales() {
+  return apiRequest<RecentSale[]>("/analytics/recent-sales");
+}
+
 export function fetchCustomerAnalytics() {
   return apiRequest<CustomerPoint[]>("/analytics/customers");
 }
+
 
 export function reserveProduct(productId: number) {
   return apiRequest<{ message: string; ttl: number }>(`/products/${productId}/reserve`, {

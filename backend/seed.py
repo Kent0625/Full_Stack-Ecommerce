@@ -230,12 +230,12 @@ def create_demo_orders(db, products_by_archive_id, users):
         return
 
     order_specs = [
-        (users[0], [("ARC-CLO-001", 1), ("ARC-BAG-002", 2)], "GCash", 2),
-        (users[1], [("ARC-ACC-003", 1)], "Cash on Delivery", 1),
-        (users[2], [("ARC-CLO-002", 2), ("ARC-ACC-002", 3)], "Bank Transfer", 0),
+        (users[0], [("ARC-CLO-001", 1), ("ARC-BAG-002", 2)], "GCash", 2, "J&T Express"),
+        (users[1], [("ARC-ACC-003", 1)], "Cash on Delivery", 1, "Flash Express"),
+        (users[2], [("ARC-CLO-002", 2), ("ARC-ACC-002", 3)], "Online Payment", 0, "J&T Express"),
     ]
 
-    for user, line_items, payment_method, days_ago in order_specs:
+    for user, line_items, payment_method, days_ago, shipping_provider in order_specs:
         created_at = datetime.utcnow() - timedelta(days=days_ago)
         total = 0.0
         order = models.Order(
@@ -246,7 +246,7 @@ def create_demo_orders(db, products_by_archive_id, users):
             customer_phone="09170000000",
             shipping_address="Demo Street, Manila",
             payment_method=payment_method,
-            delivery_zone="Zone 1",
+            delivery_zone=shipping_provider,
             created_at=created_at,
         )
         db.add(order)

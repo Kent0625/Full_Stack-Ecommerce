@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, BarChart3, Leaf } from "lucide-react";
+import { ArrowDown, ArrowRight, BadgeCheck, BarChart3, Leaf } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import { fetchProducts } from "@/lib/api";
@@ -52,35 +52,35 @@ export default function HomePage() {
           fill
           priority
           sizes="100vw"
-          className="object-cover opacity-38"
+          className="object-cover opacity-50"
         />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(185,161,107,0.28),transparent_32%),linear-gradient(90deg,#03281f_0%,rgba(3,40,31,0.92)_44%,rgba(6,59,47,0.55)_100%)]" />
-        <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-archive-ivory to-transparent" />
-        <div className="relative z-10 mx-auto grid min-h-[calc(92vh-6rem)] max-w-7xl grid-cols-1 items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(185,161,107,0.15),transparent_40%),linear-gradient(90deg,#03281f_0%,rgba(3,40,31,0.85)_40%,rgba(6,59,47,0.4)_100%)]" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-archive-ivory to-transparent" />
+        <div className="relative z-10 mx-auto grid min-h-[calc(92vh-6rem)] max-w-7xl grid-cols-1 items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="max-w-3xl">
-            <p className="mb-6 inline-flex items-center gap-2 rounded-sm border border-archive-gold/40 bg-white/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-archive-gold">
+            <p className="mb-6 inline-flex animate-fade-in items-center gap-2 rounded-sm border border-archive-gold/40 bg-white/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-archive-gold opacity-0 stagger-1">
               <Leaf size={15} />
               Curated pre-loved pieces
             </p>
-            <h1 className="font-playfair text-5xl font-semibold leading-[0.95] tracking-normal sm:text-7xl lg:text-8xl">
-              Archive Thrift
+            <h1 className="animate-slide-up text-glow font-playfair text-6xl font-semibold leading-[0.9] tracking-tight opacity-0 stagger-2 sm:text-8xl lg:text-9xl">
+              Archive <br className="hidden sm:block" /> Thrift
             </h1>
-            <div className="my-7 h-px w-56 bg-archive-gold" />
-            <p className="mt-7 max-w-2xl text-base leading-8 text-slate-100 sm:text-lg">
+            <div className="my-8 h-px w-64 animate-fade-in bg-archive-gold opacity-0 stagger-3" />
+            <p className="mt-7 max-w-xl animate-slide-up text-base leading-relaxed text-slate-100 opacity-0 stagger-3 sm:text-lg">
               A premium thrift-store marketplace for curated clothing, bags, and accessories, made for
               easy browsing and a smooth checkout experience.
             </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-10 flex animate-fade-in flex-col gap-4 opacity-0 stagger-4 sm:flex-row">
               <Link
                 href="/products"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-sm bg-archive-gold px-5 text-sm font-black uppercase tracking-[0.14em] text-archive-green-dark transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-sm bg-archive-gold px-7 text-sm font-black uppercase tracking-[0.14em] text-archive-green-dark transition-all hover:scale-[1.02] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
               >
                 Shop Collection
                 <ArrowRight size={17} />
               </Link>
               <Link
                 href="/dashboard"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-sm border border-archive-gold/50 px-5 text-sm font-black uppercase tracking-[0.14em] text-white transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-sm border border-archive-gold/50 px-7 text-sm font-black uppercase tracking-[0.14em] text-white transition-all hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
               >
                 View Analytics
                 <BarChart3 size={17} />
@@ -88,29 +88,36 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="hidden rounded-sm border border-archive-gold/25 bg-white/10 p-5 backdrop-blur-md luxury-shadow lg:block">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="hidden animate-scale-in rounded-sm border border-archive-gold/25 bg-white/5 p-6 opacity-0 backdrop-blur-md luxury-shadow stagger-4 lg:block">
+            <div className="grid grid-cols-2 gap-4">
               {categories.map((category) => (
                 <Link
                   href={`/products?category=${category.name}`}
                   key={category.name}
-                  className="group relative min-h-44 overflow-hidden rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white first:col-span-2"
+                  className="group relative min-h-48 overflow-hidden rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white first:col-span-2"
                 >
                   <Image
                     src={category.image}
                     alt={`${category.name} category`}
                     fill
                     sizes="(min-width: 1024px) 22vw, 50vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="object-cover transition-transform duration-1000 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-slate-950/35" />
-                  <div className="absolute inset-x-0 bottom-0 p-4">
+                  <div className="absolute inset-0 bg-slate-950/40 transition-colors group-hover:bg-slate-950/20" />
+                  <div className="absolute inset-x-0 bottom-0 p-5">
                     <p className="font-playfair text-2xl font-semibold">{category.name}</p>
                     <p className="mt-1 text-xs leading-5 text-slate-100">{category.copy}</p>
                   </div>
                 </Link>
               ))}
             </div>
+          </div>
+        </div>
+
+        <div className="absolute bottom-10 left-1/2 z-20 hidden -translate-x-1/2 animate-bounce-slow lg:block">
+          <div className="flex flex-col items-center gap-2 text-archive-gold/60">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Scroll</span>
+            <ArrowDown size={16} />
           </div>
         </div>
       </section>

@@ -108,3 +108,10 @@ export interface CustomerPoint {
   date: string;
   new_customers: number;
 }
+
+export interface RecentSale {
+  product_name: string;
+  customer_name: string;
+  subtotal: number;
+  created_at: string;
+}

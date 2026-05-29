@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
@@ -20,10 +20,12 @@ try:
     from . import models, reporting_models, reporting_database
     from .database import engine, get_db, redis_client
     from .reporting_database import get_reporting_db
+    from .etl import run_etl
 except ImportError:
     import models, reporting_models, reporting_database
     from database import engine, get_db, redis_client
     from reporting_database import get_reporting_db
+    from etl import run_etl
 
 
 load_dotenv()
@@ -375,6 +377,7 @@ def unreserve_product(product_id: int, db: Session = Depends(get_db)):
 @app.post("/orders", status_code=status.HTTP_201_CREATED)
 def create_order(
     payload: OrderCreateRequest,
+    background_tasks: BackgroundTasks,
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -440,6 +443,7 @@ def create_order(
 
     db.commit()
     db.refresh(order)
+    background_tasks.add_task(run_etl)
     return serialize_order(order)
 
 
@@ -461,6 +465,7 @@ def my_orders(
 def checkout_product(
     product_id: int,
     delivery_zone: str,
+    background_tasks: BackgroundTasks,
     customer_name: Optional[str] = None,
     customer_phone: Optional[str] = None,
     db: Session = Depends(get_db),
@@ -500,6 +505,7 @@ def checkout_product(
 
     db.commit()
     db.refresh(order)
+    background_tasks.add_task(run_etl)
     return {"message": "Purchase successful", "order_id": order.id, "order": serialize_order(order)}
 
 
@@ -561,6 +567,43 @@ def get_top_products(rep_db: Session = Depends(get_reporting_db)):
             "revenue": float(item.revenue or 0.0),
         }
         for item in top_products
+    ]
+
+
+@app.get("/analytics/recent-sales")
+def get_recent_sales(rep_db: Session = Depends(get_reporting_db)):
+    recent_items = (
+        rep_db.query(
+            reporting_models.FactOrderItem.subtotal,
+            reporting_models.FactOrderItem.created_at,
+            reporting_models.DimProduct.name.label("product_name"),
+            reporting_models.DimCustomer.name.label("customer_name"),
+        )
+        .join(
+            reporting_models.DimProduct,
+            reporting_models.FactOrderItem.product_id == reporting_models.DimProduct.original_product_id,
+        )
+        .join(
+            reporting_models.FactOrder,
+            reporting_models.FactOrderItem.original_order_id == reporting_models.FactOrder.original_order_id,
+        )
+        .join(
+            reporting_models.DimCustomer,
+            reporting_models.FactOrder.user_id == reporting_models.DimCustomer.original_user_id,
+        )
+        .order_by(reporting_models.FactOrderItem.created_at.desc())
+        .limit(6)
+        .all()
+    )
+
+    return [
+        {
+            "product_name": item.product_name,
+            "customer_name": item.customer_name,
+            "subtotal": float(item.subtotal),
+            "created_at": item.created_at.isoformat(),
+        }
+        for item in recent_items
     ]
 
 

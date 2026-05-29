@@ -15,7 +15,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
   const displayImage = product.image_url || product.images?.[0] || fallbackImage;
 
   return (
-    <article className="group overflow-hidden rounded-sm border border-archive-gold/25 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-2xl">
+    <article className="group animate-scale-in overflow-hidden rounded-sm border border-archive-gold/25 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
       <Link
         href={`/products/${product.id}`}
         className="block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-slate-950"
@@ -26,7 +26,7 @@ export default function ProductCard({ product, compact = false }: { product: Pro
             alt={product.name}
             fill
             sizes={compact ? "(min-width: 768px) 25vw, 50vw" : "(min-width: 1024px) 25vw, 50vw"}
-            className={`object-cover transition-transform duration-700 group-hover:scale-105 ${
+            className={`object-cover transition-transform duration-1000 group-hover:scale-110 ${
               isAvailable ? "" : "grayscale"
             }`}
           />

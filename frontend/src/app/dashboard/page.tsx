@@ -7,10 +7,11 @@ import {
   fetchAnalyticsSales,
   fetchAnalyticsSummary,
   fetchCustomerAnalytics,
+  fetchRecentSales,
   fetchTopProducts,
 } from "@/lib/api";
 import { compactPesoFormatter, formatDate, numberFormatter, pesoFormatter } from "@/lib/format";
-import type { AnalyticsSummary, CustomerPoint, SalesPoint, TopProduct } from "@/lib/types";
+import type { AnalyticsSummary, CustomerPoint, RecentSale, SalesPoint, TopProduct } from "@/lib/types";
 
 const emptySummary: AnalyticsSummary = {
   total_revenue: 0,
@@ -19,14 +20,15 @@ const emptySummary: AnalyticsSummary = {
 };
 
 async function getDashboardData() {
-  const [summary, sales, topProducts, customers] = await Promise.all([
+  const [summary, sales, topProducts, customers, recentSales] = await Promise.all([
     fetchAnalyticsSummary(),
     fetchAnalyticsSales(),
     fetchTopProducts(),
     fetchCustomerAnalytics(),
+    fetchRecentSales(),
   ]);
 
-  return { summary, sales, topProducts, customers };
+  return { summary, sales, topProducts, customers, recentSales };
 }
 
 export default function Dashboard() {
@@ -34,6 +36,7 @@ export default function Dashboard() {
   const [sales, setSales] = useState<SalesPoint[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [customers, setCustomers] = useState<CustomerPoint[]>([]);
+  const [recentSales, setRecentSales] = useState<RecentSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +50,7 @@ export default function Dashboard() {
       setSales(data.sales);
       setTopProducts(data.topProducts);
       setCustomers(data.customers);
+      setRecentSales(data.recentSales);
     } catch (err) {
       console.error("Failed to load dashboard data", err);
       setError("Analytics are unavailable. Please refresh this dashboard in a moment.");
@@ -64,6 +68,7 @@ export default function Dashboard() {
         setSales(data.sales);
         setTopProducts(data.topProducts);
         setCustomers(data.customers);
+        setRecentSales(data.recentSales);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -85,7 +90,7 @@ export default function Dashboard() {
   return (
     <main id="main-content" className="min-h-screen bg-archive-ivory px-4 pb-20 pt-28 text-archive-graphite sm:px-6">
       <div className="mx-auto max-w-7xl">
-        <section className="mb-8 flex flex-col gap-4 rounded-sm bg-archive-green-dark px-6 py-10 text-white luxury-shadow lg:flex-row lg:items-end lg:justify-between">
+        <section className="mb-8 flex animate-fade-in flex-col gap-4 rounded-sm bg-archive-green-dark px-6 py-10 text-white luxury-shadow lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-archive-gold">
               Store performance
@@ -106,12 +111,12 @@ export default function Dashboard() {
         </section>
 
         {error && (
-          <p className="mb-6 rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+          <p className="mb-6 rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 animate-fade-in">
             {error}
           </p>
         )}
 
-        <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3" aria-label="Analytics summary">
+        <section className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3 animate-slide-up opacity-0 stagger-1" aria-label="Analytics summary">
           <MetricCard
             icon={<WalletCards size={22} />}
             label="Total Revenue"
@@ -132,7 +137,7 @@ export default function Dashboard() {
           />
         </section>
 
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr] animate-slide-up opacity-0 stagger-2">
           <div className="rounded-sm border border-archive-gold/25 bg-white p-5 shadow-sm">
             <SectionHeader title="Sales over time" subtitle="Daily order count and revenue." />
             {loading ? (
@@ -192,6 +197,40 @@ export default function Dashboard() {
           </div>
 
           <div className="rounded-sm border border-archive-gold/25 bg-white p-5 shadow-sm xl:col-span-2">
+            <SectionHeader title="Recent sales" subtitle="Latest products ordered by customers." />
+            {loading ? (
+              <SkeletonRows />
+            ) : recentSales.length === 0 ? (
+              <EmptyState copy="No recent sales yet." />
+            ) : (
+              <div className="mt-6 overflow-x-auto">
+                <table className="min-w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-left text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+                      <th className="py-3">Product</th>
+                      <th className="py-3">Customer</th>
+                      <th className="py-3 text-right">Amount</th>
+                      <th className="py-3 text-right">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentSales.map((item, index) => (
+                      <tr key={index} className="border-b border-slate-100">
+                        <td className="py-3 font-semibold text-slate-700">{item.product_name}</td>
+                        <td className="py-3 text-slate-500">{item.customer_name}</td>
+                        <td className="py-3 text-right font-black tabular-nums text-archive-green-dark">
+                          {pesoFormatter.format(item.subtotal)}
+                        </td>
+                        <td className="py-3 text-right text-xs text-slate-400">{formatDate(item.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-sm border border-archive-gold/25 bg-white p-5 shadow-sm xl:col-span-2">
             <SectionHeader title="Customer growth" subtitle="New customers grouped by account creation date." />
             {loading ? (
               <SkeletonRows />
@@ -238,7 +277,7 @@ function MetricCard({
   caption: string;
 }) {
   return (
-    <div className="rounded-sm border border-archive-gold/25 bg-white p-5 shadow-sm">
+    <div className="rounded-sm border border-archive-gold/25 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-sm bg-archive-green-dark text-archive-gold">
         {icon}
       </div>

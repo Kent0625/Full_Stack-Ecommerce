@@ -27,14 +27,14 @@ export default function SlideOutCart() {
         type="button"
         aria-label="Close cart"
         onClick={() => setIsCartOpen(false)}
-        className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm"
+        className="fixed inset-0 z-50 animate-fade-in bg-slate-950/40 backdrop-blur-sm"
       />
 
       <aside
         role="dialog"
         aria-modal="true"
         aria-label="Shopping cart"
-        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-archive-ivory shadow-2xl"
+        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md animate-scale-in flex-col bg-archive-ivory shadow-2xl transition-transform duration-500 ease-in-out"
       >
         <div className="flex items-center justify-between border-b border-archive-gold/25 bg-archive-green-dark px-5 py-5 text-white">
           <div>
