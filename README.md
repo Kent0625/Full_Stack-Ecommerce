@@ -2,6 +2,12 @@
 
 Archive Thrift is a demo-ready full-stack thrift-store e-commerce system with a premium storefront, FastAPI API, PostgreSQL transactional database, separate PostgreSQL reporting database, cron-runnable ETL, and an analytics dashboard.
 
+## Live Deployment
+
+You can access the deployed project here:
+
+**Live Site:** [http://187.77.145.118/](http://187.77.145.118/)
+
 ## Tech Stack
 
 | Layer | Technology |
