@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BarChart3, LogOut, ShoppingBag, Store, UserRound } from "lucide-react";
+import { BarChart3, LogOut, Package, ShoppingBag, Store, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -24,7 +24,7 @@ export default function Navbar() {
           className="flex min-w-0 items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:gap-3"
         >
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-archive-gold/50 bg-white/5 text-archive-gold sm:h-11 sm:w-11">
-            <Store size={19} strokeWidth={1.8} />
+            <Store size={19} strokeWidth={1.8} aria-hidden="true" />
           </span>
           <span className="min-w-0 leading-none">
             <span className="block truncate font-playfair text-xl tracking-normal sm:text-2xl">Archive</span>
@@ -41,20 +41,28 @@ export default function Navbar() {
             aria-label="Analytics dashboard"
             className="flex h-10 items-center gap-1 rounded-sm px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:gap-2 sm:px-3 sm:text-xs sm:tracking-[0.12em]"
           >
-            <BarChart3 size={15} />
+            <BarChart3 size={15} aria-hidden="true" />
             <span>Dashboard</span>
           </Link>
 
           {mounted && user ? (
             <div className="flex items-center gap-1 sm:gap-2">
-              <span className="hidden max-w-32 truncate text-xs font-bold text-white/75 md:block">{user.name}</span>
+              <Link
+                href="/orders"
+                aria-label="My orders"
+                className="flex h-10 items-center gap-1 rounded-sm px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:gap-2 sm:px-3 sm:text-xs sm:tracking-[0.12em]"
+              >
+                <Package size={15} aria-hidden="true" />
+                <span>Orders</span>
+              </Link>
+              <span className="hidden max-w-28 truncate text-xs font-bold text-white/75 md:block">{user.name}</span>
               <button
                 type="button"
                 aria-label="Log out"
                 onClick={logout}
                 className="flex h-10 items-center gap-1 rounded-sm px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3 sm:text-xs"
               >
-                <LogOut size={18} />
+                <LogOut size={16} aria-hidden="true" />
                 <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
@@ -63,7 +71,7 @@ export default function Navbar() {
               href="/login"
               className="flex h-10 items-center gap-1 rounded-sm px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-3 sm:text-xs"
             >
-              <UserRound size={18} />
+              <UserRound size={16} aria-hidden="true" />
               <span>Login</span>
             </Link>
           )}

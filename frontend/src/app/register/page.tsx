@@ -67,7 +67,7 @@ export default function RegisterPage() {
       <div className="mx-auto grid max-w-6xl grid-cols-1 overflow-hidden rounded-sm border border-archive-gold/25 bg-white shadow-xl lg:grid-cols-[0.9fr_1.1fr]">
         <section className="bg-archive-green-dark p-8 text-white lg:p-12">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-archive-gold">Create account</p>
-          <h1 className="mt-4 font-playfair text-5xl font-semibold tracking-normal">Start thrifting</h1>
+          <h1 className="mt-4 font-playfair text-5xl font-semibold tracking-normal">Start Thrifting</h1>
           <p className="mt-5 text-sm leading-7 text-emerald-50">
             Create an account for a smoother checkout and a more personal shopping experience.
           </p>
@@ -77,28 +77,33 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label htmlFor="name" className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
-                Name
+                Full Name
               </label>
               <input
                 id="name"
                 type="text"
+                name="name"
                 autoComplete="name"
                 value={form.name}
                 onChange={(event) => updateField("name", event.target.value)}
-                className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 text-sm font-semibold outline-none transition-colors focus:border-archive-green-dark"
+                placeholder="Jane Doe"
+                className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 text-sm font-semibold transition-colors focus:border-archive-green-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-archive-green-dark"
               />
             </div>
             <div className="sm:col-span-2">
               <label htmlFor="email" className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
-                Email
+                Email Address
               </label>
               <input
                 id="email"
                 type="email"
+                name="email"
                 autoComplete="email"
+                spellCheck={false}
                 value={form.email}
                 onChange={(event) => updateField("email", event.target.value)}
-                className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 text-sm font-semibold outline-none transition-colors focus:border-archive-green-dark"
+                placeholder="name@example.com"
+                className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 text-sm font-semibold transition-colors focus:border-archive-green-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-archive-green-dark"
               />
             </div>
             <div>
@@ -108,10 +113,11 @@ export default function RegisterPage() {
               <input
                 id="password"
                 type="password"
+                name="password"
                 autoComplete="new-password"
                 value={form.password}
                 onChange={(event) => updateField("password", event.target.value)}
-                className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 text-sm font-semibold outline-none transition-colors focus:border-archive-green-dark"
+                className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 text-sm font-semibold transition-colors focus:border-archive-green-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-archive-green-dark"
               />
             </div>
             <div>
@@ -119,25 +125,32 @@ export default function RegisterPage() {
                 htmlFor="confirm_password"
                 className="text-xs font-black uppercase tracking-[0.16em] text-slate-500"
               >
-                Confirm
+                Confirm Password
               </label>
               <input
                 id="confirm_password"
                 type="password"
+                name="confirm_password"
                 autoComplete="new-password"
                 value={form.confirm_password}
                 onChange={(event) => updateField("confirm_password", event.target.value)}
-                className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 text-sm font-semibold outline-none transition-colors focus:border-archive-green-dark"
+                className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 text-sm font-semibold transition-colors focus:border-archive-green-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-archive-green-dark"
               />
             </div>
 
             {error && (
-              <p className="rounded-sm border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800 sm:col-span-2">
+              <p
+                role="alert"
+                className="rounded-sm border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800 sm:col-span-2"
+              >
                 {error}
               </p>
             )}
             {success && (
-              <p className="rounded-sm border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 sm:col-span-2">
+              <p
+                role="status"
+                className="rounded-sm border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 sm:col-span-2"
+              >
                 {success}
               </p>
             )}
@@ -147,15 +160,15 @@ export default function RegisterPage() {
               disabled={submitting}
               className="flex h-12 items-center justify-center gap-2 rounded-sm bg-archive-green-dark px-5 text-sm font-black uppercase tracking-[0.14em] text-white transition-colors hover:bg-archive-gold hover:text-archive-green-dark disabled:bg-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-archive-green-dark sm:col-span-2"
             >
-              <UserPlus size={18} />
-              {submitting ? "Creating..." : "Create account"}
+              <UserPlus size={18} aria-hidden="true" />
+              {submitting ? "Creating…" : "Create Account"}
             </button>
           </form>
 
           <p className="mt-8 text-center text-sm text-slate-500">
             Already registered?{" "}
             <Link href="/login" className="font-black text-archive-green hover:text-archive-gold">
-              Sign in
+              Sign In
             </Link>
           </p>
         </section>

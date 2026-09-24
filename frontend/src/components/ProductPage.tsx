@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Minus, Plus, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchProduct } from "@/lib/api";
@@ -24,6 +24,7 @@ export default function ProductPage({ productId }: { productId: string }) {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProduct(Number.parseInt(productId, 10))
@@ -40,6 +41,13 @@ export default function ProductPage({ productId }: { productId: string }) {
     if (!product) return [fallbackImage];
     return product.images?.length ? product.images : [product.image_url || fallbackImage];
   }, [product]);
+
+  function handleAddToCart() {
+    if (!product) return;
+    addToCart(product, quantity);
+    setToastMessage(`Added ${quantity} × ${product.name} to cart.`);
+    setTimeout(() => setToastMessage(null), 3500);
+  }
 
   if (loading) {
     return (
@@ -62,15 +70,15 @@ export default function ProductPage({ productId }: { productId: string }) {
         id="main-content"
         className="flex min-h-screen flex-col items-center justify-center bg-archive-ivory px-4 text-center"
       >
-        <h1 className="font-playfair text-4xl font-semibold tracking-normal text-archive-green-dark">Product not found</h1>
+        <h1 className="font-playfair text-4xl font-semibold tracking-normal text-archive-green-dark">Product Not Found</h1>
         <p className="mt-4 max-w-md text-sm leading-6 text-slate-500">{error || "This item is unavailable."}</p>
         <button
           type="button"
           onClick={() => router.push("/products")}
           className="mt-8 inline-flex h-12 items-center gap-2 rounded-sm bg-archive-green-dark px-5 text-sm font-black uppercase tracking-[0.14em] text-white hover:bg-archive-gold hover:text-archive-green-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-archive-green-dark"
         >
-          <ArrowLeft size={17} />
-          Back to shop
+          <ArrowLeft size={17} aria-hidden="true" />
+          Back to Shop
         </button>
       </main>
     );
@@ -81,22 +89,54 @@ export default function ProductPage({ productId }: { productId: string }) {
   return (
     <main id="main-content" className="min-h-screen bg-archive-ivory px-4 pb-20 pt-28 sm:px-6">
       <div className="mx-auto max-w-7xl">
+        {/* Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumbs" className="mb-6 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
+          <Link href="/" className="hover:text-archive-green-dark">
+            Home
+          </Link>
+          <ChevronRight size={14} aria-hidden="true" className="text-slate-400" />
+          <Link href="/products" className="hover:text-archive-green-dark">
+            Products
+          </Link>
+          <ChevronRight size={14} aria-hidden="true" className="text-slate-400" />
+          <Link href={`/products?category=${product.category}`} className="hover:text-archive-green-dark">
+            {product.category}
+          </Link>
+          <ChevronRight size={14} aria-hidden="true" className="text-slate-400" />
+          <span className="truncate font-semibold text-archive-green-dark" aria-current="page">
+            {product.name}
+          </span>
+        </nav>
+
+        {/* Back Link */}
         <button
           type="button"
           onClick={() => router.back()}
           className="mb-8 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-archive-green hover:text-archive-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-archive-green-dark"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={16} aria-hidden="true" />
           Back
         </button>
 
-        <section className="mb-8 rounded-sm bg-archive-green-dark px-6 py-8 text-white luxury-shadow">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-archive-gold">Shop the archive</p>
-          <h1 className="mt-3 font-playfair text-4xl font-semibold tracking-normal">Products</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200">
-            Browse curated pre-loved clothing, bags, and accessories.
-          </p>
-        </section>
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-6 flex items-center justify-between gap-4 rounded-sm border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900 shadow-sm animate-fade-in"
+          >
+            <div className="flex items-center gap-2">
+              <Check size={18} className="text-emerald-700" aria-hidden="true" />
+              <span>{toastMessage}</span>
+            </div>
+            <Link
+              href="/cart"
+              className="text-xs font-black uppercase tracking-[0.12em] text-emerald-950 underline hover:text-emerald-800"
+            >
+              View Cart →
+            </Link>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           <section>
@@ -176,7 +216,7 @@ export default function ProductPage({ productId }: { productId: string }) {
                     onClick={() => setQuantity((current) => Math.max(1, current - 1))}
                     className="flex h-9 w-9 items-center justify-center rounded-sm hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
                   >
-                    <Minus size={16} />
+                    <Minus size={16} aria-hidden="true" />
                   </button>
                   <span className="text-sm font-black tabular-nums">{quantity}</span>
                   <button
@@ -185,17 +225,17 @@ export default function ProductPage({ productId }: { productId: string }) {
                     onClick={() => setQuantity((current) => Math.min(product.stock_quantity, current + 1))}
                     className="flex h-9 w-9 items-center justify-center rounded-sm hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-950"
                   >
-                    <Plus size={16} />
+                    <Plus size={16} aria-hidden="true" />
                   </button>
                 </div>
                 <button
                   type="button"
                   disabled={!isAvailable}
-                  onClick={() => addToCart(product, quantity)}
+                  onClick={handleAddToCart}
                   className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-sm bg-archive-green-dark px-5 text-sm font-black uppercase tracking-[0.14em] text-white transition-colors hover:bg-archive-gold hover:text-archive-green-dark disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-archive-green-dark"
                 >
-                  <ShoppingBag size={18} />
-                  Add to cart
+                  <ShoppingBag size={18} aria-hidden="true" />
+                  Add to Cart
                 </button>
               </div>
             </div>
@@ -210,7 +250,7 @@ export default function ProductPage({ productId }: { productId: string }) {
               href="/cart"
               className="mt-8 inline-flex text-sm font-black uppercase tracking-[0.14em] text-archive-green hover:text-archive-gold"
             >
-              Go to checkout
+              Go to Checkout
             </Link>
           </section>
         </div>

@@ -22,6 +22,7 @@ export default function ProductsPage() {
     categories.includes(initialCategory) ? initialCategory : "All",
   );
   const [search, setSearch] = useState(getInitialFilter("search"));
+  const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc" | "newest">("featured");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,16 +45,36 @@ export default function ProductsPage() {
     return () => window.clearTimeout(timeout);
   }, [category, search, router]);
 
+  const sortedProducts = useMemo(() => {
+    const list = [...products];
+    if (sortBy === "price-asc") {
+      return list.sort((a, b) => a.price - b.price);
+    }
+    if (sortBy === "price-desc") {
+      return list.sort((a, b) => b.price - a.price);
+    }
+    if (sortBy === "newest") {
+      return list.sort((a, b) => b.id - a.id);
+    }
+    return list;
+  }, [products, sortBy]);
+
   const availableCount = useMemo(
     () => products.filter((product) => product.status === "available" && product.stock_quantity > 0).length,
     [products],
   );
 
+  function resetFilters() {
+    setCategory("All");
+    setSearch("");
+    setSortBy("featured");
+  }
+
   return (
     <main id="main-content" className="min-h-screen bg-archive-ivory px-4 pb-20 pt-28 sm:px-6">
       <div className="mx-auto max-w-7xl">
         <section className="mb-8 rounded-sm bg-archive-green-dark px-6 py-10 text-white luxury-shadow sm:px-8">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-archive-gold">Shop the archive</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-archive-gold">Shop the Archive</p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="font-playfair text-5xl font-semibold tracking-normal text-white">Products</h1>
@@ -61,27 +82,27 @@ export default function ProductsPage() {
                 Browse curated pre-loved clothing, bags, and accessories.
               </p>
             </div>
-            <div className="rounded-sm border border-archive-gold/35 bg-white/10 px-4 py-3 text-sm font-bold text-white shadow-sm">
+            <div className="rounded-sm border border-archive-gold/35 bg-white/10 px-4 py-3 text-sm font-bold tabular-nums text-white shadow-sm">
               {availableCount} available / {products.length} shown
             </div>
           </div>
         </section>
 
-        <section className="mb-8 grid gap-4 rounded-sm border border-archive-gold/25 bg-white p-4 shadow-sm lg:grid-cols-[1fr_auto]">
-          <label className="flex min-h-12 items-center gap-3 rounded-sm border border-archive-gold/25 bg-archive-ivory px-3">
-            <Search size={18} className="text-slate-400" />
+        <section className="mb-8 grid gap-4 rounded-sm border border-archive-gold/25 bg-white p-4 shadow-sm lg:grid-cols-[1fr_auto_auto]">
+          <label className="flex min-h-12 items-center gap-3 rounded-sm border border-archive-gold/25 bg-archive-ivory px-3 focus-within:border-archive-green-dark">
+            <Search size={18} className="text-slate-400" aria-hidden="true" />
             <span className="sr-only">Search products</span>
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search denim, tote, watch..."
+              placeholder="Search denim, tote, watch…"
               className="w-full bg-transparent text-sm font-semibold text-slate-950 outline-none placeholder:text-slate-400"
             />
           </label>
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="mr-1 hidden items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-slate-500 sm:flex">
-              <SlidersHorizontal size={16} />
+              <SlidersHorizontal size={16} aria-hidden="true" />
               Category
             </span>
             {categories.map((item) => (
@@ -99,6 +120,23 @@ export default function ProductsPage() {
               </button>
             ))}
           </div>
+
+          <div className="flex items-center gap-2">
+            <label htmlFor="sort-select" className="sr-only">
+              Sort by
+            </label>
+            <select
+              id="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="h-10 rounded-sm border border-archive-gold/25 bg-archive-ivory px-3 text-xs font-bold text-slate-800 focus:border-archive-green-dark focus:outline-none"
+            >
+              <option value="featured">Featured</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="newest">Newest First</option>
+            </select>
+          </div>
         </section>
 
         {loading ? (
@@ -113,17 +151,29 @@ export default function ProductsPage() {
             ))}
           </div>
         ) : error ? (
-          <div className="rounded-sm border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-800">
+          <div
+            role="alert"
+            className="rounded-sm border border-rose-200 bg-rose-50 p-6 text-sm font-semibold text-rose-800"
+          >
             {error}
           </div>
-        ) : products.length === 0 ? (
-          <div className="rounded-sm border border-slate-200 bg-white p-12 text-center">
-            <h2 className="font-playfair text-3xl font-semibold tracking-normal text-slate-950">No matches</h2>
-            <p className="mt-3 text-sm text-slate-500">Try another search term or category.</p>
+        ) : sortedProducts.length === 0 ? (
+          <div className="rounded-sm border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <h2 className="font-playfair text-3xl font-semibold tracking-normal text-slate-950">No Matches Found</h2>
+            <p className="mt-3 text-sm text-slate-500">
+              No products match your current filters. Try changing or clearing your search.
+            </p>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="mt-6 inline-flex h-11 items-center justify-center rounded-sm bg-archive-green-dark px-6 text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-archive-gold hover:text-archive-green-dark"
+            >
+              Reset Filters
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => (
+            {sortedProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

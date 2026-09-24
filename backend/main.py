@@ -51,6 +51,7 @@ def parse_origins() -> list[str]:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=parse_origins(),
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

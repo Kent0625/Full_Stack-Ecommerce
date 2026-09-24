@@ -90,16 +90,22 @@ export default function CartPage() {
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link
-              href="/dashboard"
+              href="/orders"
               className="inline-flex h-12 items-center justify-center rounded-sm bg-archive-green-dark px-5 text-sm font-black uppercase tracking-[0.14em] text-white hover:bg-archive-gold hover:text-archive-green-dark"
             >
-              View dashboard
+              View My Orders
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex h-12 items-center justify-center rounded-sm border border-archive-gold/50 px-5 text-sm font-black uppercase tracking-[0.14em] text-archive-green-dark hover:bg-slate-50"
+            >
+              Store Analytics
             </Link>
             <Link
               href="/products"
               className="inline-flex h-12 items-center justify-center rounded-sm border border-slate-300 px-5 text-sm font-black uppercase tracking-[0.14em] text-slate-950 hover:bg-slate-100"
             >
-              Keep shopping
+              Keep Shopping
             </Link>
           </div>
         </div>
@@ -223,7 +229,7 @@ export default function CartPage() {
                   value={form.shipping_address}
                   onChange={(event) => updateField("shipping_address", event.target.value)}
                   rows={3}
-                  className="mt-2 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 py-3 text-sm font-semibold outline-none transition-colors focus:border-archive-green-dark"
+                  className="mt-2 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 py-3 text-sm font-semibold transition-colors focus:border-archive-green-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-archive-green-dark"
                 />
               </label>
 
@@ -316,7 +322,7 @@ function TextField({
         value={value}
         autoComplete={autoComplete}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 text-sm font-semibold outline-none transition-colors focus:border-archive-green-dark"
+        className="mt-2 h-12 w-full rounded-sm border border-archive-gold/25 bg-archive-ivory px-4 text-sm font-semibold transition-colors focus:border-archive-green-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-archive-green-dark"
       />
     </label>
   );

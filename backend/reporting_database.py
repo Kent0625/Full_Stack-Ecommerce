@@ -14,6 +14,9 @@ REPORTING_DATABASE_URL = os.getenv(
     "REPORTING_DATABASE_URL", f"sqlite:///{DEFAULT_REPORTING_DB_PATH}"
 )
 
+if REPORTING_DATABASE_URL.startswith("postgres://"):
+    REPORTING_DATABASE_URL = REPORTING_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 if REPORTING_DATABASE_URL.startswith("sqlite"):
     if REPORTING_DATABASE_URL.startswith("sqlite:///C:"):
         REPORTING_DATABASE_URL = REPORTING_DATABASE_URL.replace("sqlite:///C:", "sqlite:///c:")

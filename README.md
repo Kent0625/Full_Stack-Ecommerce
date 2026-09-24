@@ -1,203 +1,122 @@
-# Archive Thrift - Cloud Computing Final Project
+# Archive Thrift — Full-Stack E-Commerce & Analytics Platform
 
-Archive Thrift is a demo-ready full-stack thrift-store e-commerce system with a premium storefront, FastAPI API, PostgreSQL transactional database, separate PostgreSQL reporting database, cron-runnable ETL, and an analytics dashboard.
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat&logo=next.js)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-2.0-009688?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=flat&logo=postgresql)](https://www.postgresql.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.0-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=flat&logo=docker)](https://www.docker.com/)
 
-## Live Deployment
+Archive Thrift is a production-grade full-stack thrift-store e-commerce system featuring a luxury storefront, FastAPI backend, dual PostgreSQL databases (OLTP transactional DB + separate OLAP analytical warehouse), automated ETL pipeline, and live executive dashboard.
 
-You can access the deployed project here:
+---
 
-**Live Site:** [http://187.77.145.118/](http://187.77.145.118/)
+## 🚀 Live Demo & Portfolio Access
 
-## Tech Stack
+| Resource | Link / Details |
+|---|---|
+| **Demo Login** | **Email:** `demo@example.com` &bull; **Password:** `DemoPass123` |
+| **Quick Demo Access** | Use the **"1-Click Demo Login"** button on the `/login` page for instant access without signing up. |
+| **Deployment Guide** | [docs/PORTFOLIO_DEPLOYMENT_GUIDE.md](docs/PORTFOLIO_DEPLOYMENT_GUIDE.md) *(Permanent 100% Free Zero-Expiration Setup on Vercel + Render + Neon)* |
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | Next.js App Router, React, TypeScript, Tailwind CSS, lucide-react |
-| Backend | FastAPI, SQLAlchemy, Uvicorn/Gunicorn |
-| Main DB | PostgreSQL transactional database |
-| Reporting DB | Separate PostgreSQL analytics database |
-| ETL | Python script runnable manually or by Linux cron |
-| VPS Runtime | Ubuntu, Nginx, systemd, PM2, PostgreSQL |
+---
 
-Local development can use SQLite fallback files, but VPS deployment should use PostgreSQL URLs for both databases.
+## 🛠️ Tech Stack & Architecture
 
-## Features
-
-- Premium responsive thrift-store UI.
-- Landing page with hero, featured products, and category sections.
-- Product listing with search and filters for Clothing, Bags, and Accessories.
-- Product detail page with images, price, category, description, stock, and add-to-cart.
-- Register/login with password hashing and JWT authentication.
-- Quantity-aware frontend cart with localStorage persistence.
-- Protected checkout that creates real backend orders and order items.
-- Stock reduction and sold-out status updates after checkout.
-- Reporting dashboard for total revenue, total orders, customers, daily sales, top products, and customer growth.
-- ETL from transactional DB to reporting DB.
-- Hostinger VPS deployment guide in [docs/HOSTINGER_VPS_DEPLOYMENT.md](docs/HOSTINGER_VPS_DEPLOYMENT.md).
-
-## Architecture
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Frontend** | Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, Lucide Icons | Responsive luxury storefront, client cart, customer portal |
+| **Backend** | FastAPI, SQLAlchemy, Uvicorn/Gunicorn, Pydantic | High-performance RESTful API with background tasks |
+| **Transactional DB (OLTP)** | PostgreSQL (or SQLite fallback) | ACID transactional store for users, catalog, stock, and orders |
+| **Reporting DB (OLAP)** | PostgreSQL (or SQLite fallback) | Dimension & fact tables optimized for aggregations |
+| **Data Pipeline (ETL)** | Python script (`backend/etl.py`) | Automated on order creation via FastAPI BackgroundTasks or Linux cron |
+| **Deployment Options** | Vercel (Frontend) + Render/Koyeb (Backend) + Neon (DB) OR Docker Compose | Zero downtime, permanent free hosting for portfolio showcases |
 
 ```mermaid
-flowchart LR
-  Browser["Next.js frontend"] -->|/api reverse proxy| FastAPI["FastAPI backend"]
-  FastAPI --> MainDB["PostgreSQL main DB"]
-  ETL["backend/etl.py via cron"] --> MainDB
-  ETL --> ReportingDB["PostgreSQL reporting DB"]
-  FastAPI --> ReportingDB
-  Dashboard["Dashboard page"] -->|analytics APIs| FastAPI
+flowchart TD
+  User([Shopper / Recruiter]) -->|Browse & Checkout| Frontend["Next.js 16 Storefront"]
+  Frontend -->|/api reverse proxy| API["FastAPI REST Backend"]
+  API --> MainDB[("PostgreSQL Transactional DB<br/>(Users, Products, Orders, Items)")]
+  API -->|Trigger Background Task| ETL["ETL Pipeline (backend/etl.py)"]
+  ETL --> MainDB
+  ETL --> ReportingDB[("PostgreSQL Reporting Warehouse<br/>(DimProducts, DimCustomers, FactOrders, DailySales)")]
+  Dashboard["Analytics Dashboard (/dashboard)"] -->|Queries| API
+  API --> ReportingDB
+  Customer["Customer Portal (/orders)"] -->|Queries| API
+  API --> MainDB
 ```
 
-## Database Schema
+---
 
-Transactional database:
+## ✨ Key Features
 
-- `users`: `id`, `name`, `email`, `hashed_password`, `created_at`
-- `products`: `id`, `name`, `description`, `price`, `category`, `image_url`, `stock_quantity`, `status`, `created_at`
-- `orders`: `id`, `user_id`, `total_amount`, `status`, customer/shipping/payment fields, `created_at`
-- `order_items`: `id`, `order_id`, `product_id`, `quantity`, `unit_price`, `subtotal`
+1. **Curated Storefront & Catalog:**
+   - Filter by categories (*Clothing, Bags, Accessories*), search by keywords, and sort by *Price (Low/High), Newest, or Featured*.
+   - Product details with high-resolution image galleries, condition ratings, era tags, and real-time stock availability.
+2. **Flash-Sale Concurrency & Reservation:**
+   - In-memory/Redis TTL locks preventing double-spending and overselling during simultaneous checkouts.
+3. **Cart & Protected Checkout:**
+   - Quantity-aware slide-out drawer and dedicated checkout page.
+   - Courier selection (J&T Express, Flash Express) and payment methods (GCash, COD, Online Payment).
+4. **Customer Order Portal (`/orders`):**
+   - Order history with tracking status, shipping carrier details, item thumbnails, and cost breakdowns.
+5. **Real-Time Data Warehouse & Analytics (`/dashboard`):**
+   - Daily revenue, order volume, customer acquisition curves, and top-performing products calculated from OLAP fact tables.
+6. **Accessible & Responsive:**
+   - Full keyboard navigation, visible focus rings, reduced motion support, screen reader friendly (`aria-live`, `aria-label`).
 
-Reporting database:
+---
 
-- `dim_products`
-- `dim_customers`
-- `fact_orders`
-- `fact_order_items`
-- `daily_sales_summary`
+## ⚡ Quick Start (Local Development)
 
-## API Endpoints
-
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `POST` | `/auth/register` | Create user and return JWT |
-| `POST` | `/auth/login` | Login and return JWT |
-| `GET` | `/auth/me` | Validate JWT and return current user |
-| `GET` | `/products` | List products, supports `category` and `search` |
-| `GET` | `/products/{id}` | Product details |
-| `POST` | `/orders` | Protected checkout, creates order and order items |
-| `GET` | `/orders/me` | Current user's orders |
-| `GET` | `/analytics/summary` | Revenue, orders, customers |
-| `GET` | `/analytics/sales` | Daily sales summary |
-| `GET` | `/analytics/top-products` | Top products by units sold |
-| `GET` | `/analytics/customers` | Customer growth |
-
-## Local Setup
-
-### Backend
+### 1. Backend Setup
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate
+
+# Windows PowerShell:
+.\venv\Scripts\Activate.ps1
+
+# Linux / macOS:
+# source venv/bin/activate
+
 pip install -r requirements.txt
-cp .env.example .env
 python seed.py
 python etl.py
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8000
 ```
 
-Windows PowerShell:
+The API will be available at `http://localhost:8000`. Interactive Swagger API docs at `http://localhost:8000/docs`.
 
-```powershell
-cd backend
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-Copy-Item .env.example .env
-python seed.py
-python etl.py
-uvicorn main:app --reload
-```
-
-### Frontend
+### 2. Frontend Setup
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local
 npm run dev
 ```
 
-Open `http://localhost:3000`. The frontend proxies `/api/*` to `BACKEND_URL` from `frontend/.env.local`.
+Open `http://localhost:3000` in your browser.
 
-## Environment Variables
+---
 
-Backend `backend/.env`:
+## 🐳 1-Command Docker Deployment
 
-```env
-DATABASE_URL=sqlite:///./thrift_main.sqlite
-REPORTING_DATABASE_URL=sqlite:///./thrift_reporting.sqlite
-JWT_SECRET_KEY=replace_with_a_long_random_secret
-JWT_EXPIRES_SECONDS=86400
-FRONTEND_URL=http://localhost:3000
-REDIS_URL=
-```
-
-For Hostinger VPS, replace the SQLite URLs with PostgreSQL URLs as shown in the deployment guide.
-
-Frontend `frontend/.env.local`:
-
-```env
-NEXT_PUBLIC_API_URL=/api
-BACKEND_URL=http://127.0.0.1:8000
-```
-
-## ETL Process
-
-Run manually:
+You can run the entire multi-container stack (PostgreSQL + FastAPI + Next.js) with Docker Compose:
 
 ```bash
-cd backend
-python etl.py
+docker compose up -d --build
 ```
 
-Cron script:
+- Storefront: `http://localhost:3000`
+- API Backend: `http://localhost:8000`
+- Database: `localhost:5432`
 
-```bash
-cd backend
-chmod +x run_etl.sh
-./run_etl.sh
-```
+---
 
-The ETL extracts users, products, orders, and order items from the transactional database, loads reporting dimensions/facts, and rebuilds `daily_sales_summary`.
+## 🌐 Deploy Live (Permanent & Free)
 
-## Demo Flow
+To deploy this project permanently so recruiters and interviewers can view it at any time without fear of a 30-day or 3-month trial expiration:
 
-1. Start PostgreSQL or use local SQLite fallback.
-2. Start backend with `uvicorn main:app --reload`.
-3. Run `python seed.py` to create sample thrift products and demo orders.
-4. Run `python etl.py` to populate the reporting database.
-5. Start frontend with `npm run dev`.
-6. Visit the home page, browse products, filter by category, and open a product detail page.
-7. Login with `demo@example.com` / `DemoPass123` or register a new account.
-8. Add products to cart and checkout.
-9. Run `python etl.py` again.
-10. Refresh `/dashboard` to show updated sales, revenue, top products, and customers.
-
-## Verification Commands
-
-Backend:
-
-```bash
-cd backend
-python -m unittest discover -s tests
-python -m compileall .
-python seed.py
-python etl.py
-```
-
-Frontend:
-
-```bash
-cd frontend
-npm install
-npm run lint
-npm run build
-```
-
-## VPS Deployment
-
-Use the complete Hostinger Ubuntu VPS guide:
-
-[docs/HOSTINGER_VPS_DEPLOYMENT.md](docs/HOSTINGER_VPS_DEPLOYMENT.md)
-
-It includes SSH, package installation, PostgreSQL users/databases, environment files, backend systemd, frontend PM2, Nginx reverse proxy, cron ETL, testing, and troubleshooting.
+👉 Follow the complete step-by-step walkthrough in **[docs/PORTFOLIO_DEPLOYMENT_GUIDE.md](docs/PORTFOLIO_DEPLOYMENT_GUIDE.md)**.

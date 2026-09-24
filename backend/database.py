@@ -13,6 +13,9 @@ DEFAULT_DB_PATH = os.path.join(BASE_DIR, "thrift_main.sqlite")
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
 REDIS_URL = os.getenv("REDIS_URL")
 
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 if DATABASE_URL.startswith("sqlite"):
     if DATABASE_URL.startswith("sqlite:///C:"):
         DATABASE_URL = DATABASE_URL.replace("sqlite:///C:", "sqlite:///c:")

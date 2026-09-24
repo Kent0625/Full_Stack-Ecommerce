@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: archive-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: thrift_user
+      POSTGRES_PASSWORD: thrift_password
+      POSTGRES_DB: thrift_store
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U thrift_user -d thrift_store"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: archive-backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://thrift_user:thrift_password@postgres:5432/thrift_store
+      REPORTING_DATABASE_URL: postgresql://thrift_user:thrift_password@postgres:5432/thrift_reporting
+      JWT_SECRET_KEY: portfolio_secure_secret_key_change_in_production_12345
+      JWT_EXPIRES_SECONDS: "86400"
+      FRONTEND_URL: http://localhost:3000,http://127.0.0.1:3000
+      PORT: "8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        BACKEND_URL: http://backend:8000
+    container_name: archive-frontend
+    restart: always
+    environment:
+      BACKEND_URL: http://backend:8000
+      NEXT_PUBLIC_API_URL: /api
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

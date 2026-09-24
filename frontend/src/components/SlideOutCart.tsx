@@ -34,7 +34,7 @@ export default function SlideOutCart() {
         role="dialog"
         aria-modal="true"
         aria-label="Shopping cart"
-        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md animate-scale-in flex-col bg-archive-ivory shadow-2xl transition-transform duration-500 ease-in-out"
+        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md animate-scale-in flex-col bg-archive-ivory shadow-2xl transition-transform duration-500 ease-in-out overscroll-contain"
       >
         <div className="flex items-center justify-between border-b border-archive-gold/25 bg-archive-green-dark px-5 py-5 text-white">
           <div>
@@ -49,7 +49,7 @@ export default function SlideOutCart() {
             onClick={() => setIsCartOpen(false)}
             className="flex h-10 w-10 items-center justify-center rounded-sm hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            <X size={20} />
+            <X size={20} aria-hidden="true" />
           </button>
         </div>
 
@@ -57,7 +57,7 @@ export default function SlideOutCart() {
           {cart.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-sm bg-white text-slate-950 shadow-sm">
-                <ShoppingBag size={26} />
+                <ShoppingBag size={26} aria-hidden="true" />
               </div>
               <p className="font-playfair text-2xl font-semibold tracking-normal text-slate-950">Your cart is empty</p>
               <p className="mt-2 max-w-xs text-sm leading-6 text-slate-500">
