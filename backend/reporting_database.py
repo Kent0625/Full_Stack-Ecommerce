@@ -24,7 +24,7 @@ if REPORTING_DATABASE_URL.startswith("sqlite"):
         REPORTING_DATABASE_URL, connect_args={"check_same_thread": False}
     )
 else:
-    reporting_engine = create_engine(REPORTING_DATABASE_URL, pool_pre_ping=True)
+    reporting_engine = create_engine(REPORTING_DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
 
 ReportingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=reporting_engine)
 
